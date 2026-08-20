@@ -1,0 +1,27 @@
+SYSTEM = Al4C3 Pbam - relax @ 0 GPa (ISIF=8)
+
+# electronic
+PREC    = Accurate
+ENCUT   = 600
+EDIFF   = 1E-5
+ISMEAR  = 0
+SIGMA   = 0.05
+
+# k-points (KSPACING supersedes KPOINTS file)
+KSPACING = 0.03
+KGAMMA   = .TRUE.
+
+# ionic + volume relaxation, cell shape fixed (keeps space group)
+IBRION  = 2
+ISIF    = 8
+NSW     = 200
+EDIFFG  = -0.01
+PSTRESS = 0.0
+
+# parallelization (adjust NPAR/KPAR to allocation)
+NPAR    = 4
+KPAR    = 2
+
+# output
+LWAVE   = .FALSE.
+LCHARG  = .FALSE.
