@@ -1,5 +1,5 @@
 #!/bin/sh
-#SBATCH --job-name=Al4C3_I-43d_0GPa
+#SBATCH --job-name=Al4C3_Pnma-III_0GPa
 #SBATCH --nodes=1
 #SBATCH --ntasks=40
 #SBATCH --cpus-per-task=1
@@ -13,7 +13,9 @@ module load vasp/6.5.0
 export OMP_NUM_THREADS=1
 ulimit -s unlimited
 
-# restart: POSCAR already set from previous run's CONTCAR (ZBRENT bracketing failure near convergence)
+cp ../Al4C3_Pnma-III_50GPa/CONTCAR.relaxed POSCAR
+cp ../Al4C3_Pnma-III_50GPa/POTCAR POTCAR
+
 cp INCAR.relax INCAR
 { time -p srun --mpi=pmi2 --ntasks=$SLURM_NTASKS --cpus-per-task=1 vasp_std ; } 2>> vasp.log
 if ! grep -q "General timing" OUTCAR 2>/dev/null; then
