@@ -1,0 +1,292 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{booktabs}
+\usepackage{siunitx}
+\usepackage[table]{xcolor}
+\usepackage{hyperref}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usetikzlibrary{positioning}
+\usepackage{caption}
+\usepackage{enumitem}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{listings}
+
+\sisetup{detect-weight=true, detect-family=true}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  frame=single,
+  columns=fullflexible,
+  backgroundcolor=\color{black!3}
+}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!50!black,
+  urlcolor=blue!50!black,
+  citecolor=blue!50!black,
+  pdftitle={Scan H(P) Al4C3 - preparation},
+  pdfauthor={Pr. John Akapulco}
+}
+
+\title{\vspace{-1.5cm}Rapport de préparation\\[2pt]
+\large Balayage enthalpie--pression H(P) des polymorphes Al$_4$C$_3$ (0--100~GPa)}
+\author{Pr. John Akapulco \\ \small \href{mailto:computchem86@gmail.com}{computchem86@gmail.com}}
+\date{22 août 2026}
+
+\begin{document}
+\maketitle
+\vspace{-0.5cm}
+
+\begin{abstract}
+\noindent
+Ce rapport documente la préparation d'une campagne de calculs DFT (VASP, \texttt{ISIF=8})
+visant à tracer l'enthalpie $H(P) = E + PV$ des sept polymorphes d'Al$_4$C$_3$ déjà relaxés à
+50~GPa, sur la gamme \textbf{0--100~GPa} (pas de 10~GPa), afin de déterminer le domaine de
+stabilité de chaque phase sur toute cette gamme. Chaque polymorphe donne lieu à une
+\textbf{chaîne} de 10 calculs partant d'un point « graine » à 50~GPa (ré-optimisé à
+\texttt{KSPACING=0.2} avec sauvegarde de la fonction d'onde et de la densité de charge), puis
+redescendant jusqu'à la borne \textbf{0~GPa} et remontant jusqu'à la borne \textbf{100~GPa} par
+pas de 10~GPa, chaque point redémarrant électroniquement (\texttt{WAVECAR}), en densité de
+charge (\texttt{CHGCAR}) et ioniquement (\texttt{CONTCAR}) depuis le point de pression voisin
+déjà calculé dans la même branche. Soit \textbf{77 calculs} au total (7 phases $\times$ 11
+pressions : 0, 10, 20, ..., 100~GPa), organisés en \textbf{7 jobs SLURM} — un par phase —
+réservant chacun \textbf{un seul nœud pendant toute la durée de la série} : les 11 points de
+la chaîne s'exécutent séquentiellement dans cette même allocation, le nœud n'étant libéré
+qu'une fois les 11 points de la phase terminés. Les scripts sont générés et prêts dans
+\texttt{hp\_curves/} ; \textbf{aucun calcul n'a encore été soumis} — la soumission attend la
+validation de l'utilisateur avant de lancer la campagne sur le cluster.
+\end{abstract}
+
+\section{Objectif}
+
+La campagne précédente (voir \texttt{reports/al4c3\_activity/}) a établi un renversement de
+stabilité entre 0 et 50~GPa parmi sept polymorphes candidats d'Al$_4$C$_3$ : R-3m est le plus
+stable à 0~GPa mais devient le moins stable des sept à 50~GPa, au profit de Pbam et Pnma. Pour
+localiser ce croisement et cartographier le domaine de stabilité de chaque phase sur toute la
+gamme 0--100~GPa, cette nouvelle campagne calcule l'enthalpie $H(P)$ de chaque polymorphe à 10
+pressions supplémentaires (0, 10, 20, 30, 40, 60, 70, 80, 90, 100~GPa, pas de 10~GPa), en plus
+du point 50~GPa déjà disponible qui sert de graine à la chaîne.
+
+\section{Structures de départ}
+
+Chaque chaîne part de la structure relaxée à 50~GPa lors de la campagne précédente
+(\texttt{KSPACING=0.03}) :
+
+\begin{table}[h]
+\centering
+\begin{tabular}{llc}
+\toprule
+Polymorphe & Source (CONTCAR.relaxed) & Atomes/maille \\
+\midrule
+I-43d            & \texttt{structures/Al4C3\_I-43d\_50GPa/}      & 28 \\
+Pnma-III         & \texttt{structures/Al4C3\_Pnma-III\_50GPa/}   & 28 \\
+Pnma             & \texttt{structures/Al4C3\_Pnma\_50GPa/}       & 28 \\
+Pnma-VII         & \texttt{structures/Al4C3\_Pnma-VII\_50GPa/}   & 28 \\
+R-3m             & \texttt{structures/Al4C3\_R-3m\_50GPa/}       & 21 \\
+Pbam             & \texttt{structures/Al4C3\_Pbam/}              & 14 \\
+anti-CaFe$_2$O$_4$ & \texttt{structures/Al4C3\_anti-CaFe2O4/}    & 28 \\
+\bottomrule
+\end{tabular}
+\caption{Les sept polymorphes relaxés à 50~GPa (campagne précédente) servant de point de
+départ à ce balayage.}
+\end{table}
+
+\section{Méthodologie}
+
+\subsection{Schéma de chaînage}
+
+Pourquoi une chaîne plutôt que 77 calculs indépendants partant chacun de la structure 50~GPa
+d'origine ? Parce que l'énoncé demande explicitement de réutiliser, à chaque pression, la
+fonction d'onde (\texttt{WAVECAR}), la densité de charge (\texttt{CHGCAR}) et la structure
+(\texttt{CONTCAR}) optimisées à la pression voisine déjà calculée, pour accélérer la
+convergence électronique à chaque nouveau point. Or \textbf{aucun \texttt{WAVECAR}/\texttt{CHGCAR}
+n'existe dans les relaxations 50~GPa déjà réalisées} (\texttt{LWAVE=.FALSE.} et
+\texttt{LCHARG=.FALSE.} dans tous les \texttt{INCAR.relax} d'origine, fichiers à 0 octet), et
+un \texttt{WAVECAR}/\texttt{CHGCAR} calculé à \texttt{KSPACING=0.03} ne serait de toute façon
+pas réutilisable à \texttt{KSPACING=0.2} (maillage \textbf{k} différent). Chaque phase démarre
+donc par un point « graine » à 50~GPa, ré-optimisé à \texttt{KSPACING=0.2} avec
+\texttt{LWAVE=.TRUE.} et \texttt{LCHARG=.TRUE.}, à partir duquel les deux branches
+(descendante jusqu'à 0~GPa, ascendante jusqu'à 100~GPa) sont chaînées :
+
+\begin{center}
+\begin{tikzpicture}[node distance=13mm, every node/.style={font=\small}]
+  \node (p0)  [draw, thin, circle, inner sep=1pt] {0};
+  \node (p10) [right=of p0] {10};
+  \node (p20) [right=of p10] {20};
+  \node (p30) [right=of p20] {30};
+  \node (p40) [right=of p30] {40};
+  \node (p50) [right=of p40, draw, thick, circle, inner sep=1pt] {50};
+  \node (p60) [right=of p50] {60};
+  \node (p70) [right=of p60] {70};
+  \node (p80) [right=of p70] {80};
+  \node (p90) [right=of p80] {90};
+  \node (p100)[right=of p90, draw, thin, circle, inner sep=1pt] {100};
+  \draw[-latex] (p50) -- (p40);
+  \draw[-latex] (p40) -- (p30);
+  \draw[-latex] (p30) -- (p20);
+  \draw[-latex] (p20) -- (p10);
+  \draw[-latex] (p10) -- (p0);
+  \draw[-latex] (p50) -- (p60);
+  \draw[-latex] (p60) -- (p70);
+  \draw[-latex] (p70) -- (p80);
+  \draw[-latex] (p80) -- (p90);
+  \draw[-latex] (p90) -- (p100);
+\end{tikzpicture}
+\end{center}
+
+Chaque flèche représente une étape séquentielle \textbf{à l'intérieur d'un même job SLURM} :
+contrairement à une première version de ce script qui soumettait un job indépendant par point
+de pression (chaînés entre eux par \texttt{--dependency=afterok}, sans garantie de tomber sur
+le même nœud physique d'un point à l'autre), \textbf{un seul job réserve un unique nœud pour
+toute la série d'une phase}, et exécute les 11 points les uns après les autres dans cette même
+allocation — le point suivant hérite directement de \texttt{WAVECAR}, \texttt{CHGCAR} et
+\texttt{CONTCAR} sur le disque local à l'étape qui vient de se terminer, sans repasser par la
+file d'attente SLURM entre deux points. Le point 50~GPa (graine, cerclé en gras) est commun aux
+deux branches ; les bornes 0 et 100~GPa (cerclées en fin de chaîne) sont les extrémités de la
+gamme demandée. Cela donne, par phase, 1 graine + 5 points descendants (40, 30, 20, 10, 0) + 5
+points ascendants (60, 70, 80, 90, 100) = 11 calculs exécutés en séquence sur un seul nœud,
+soit $7 \times 11 = \mathbf{77}$ calculs (sur \textbf{7 nœuds réservés en parallèle}, un par
+phase) pour l'ensemble de la campagne.
+
+\subsection{Paramètres DFT}
+
+Les paramètres électroniques/ioniques communs reprennent ceux de la campagne précédente
+(PBE, \texttt{ENCUT=600}, \texttt{ISIF=8}, \texttt{EDIFFG=-0.01}), à l'exception du maillage
+\textbf{k}, volontairement relâché pour cette campagne à 77 calculs :
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+Paramètre & Valeur \\
+\midrule
+\texttt{KSPACING / KGAMMA} & \textbf{0.2}~\AA$^{-1}$ / .TRUE. \\
+\texttt{IBRION / ISIF} & 2 / 8 \\
+\texttt{NSW / EDIFFG} & 200 / $-0.01$~eV/\AA \\
+\texttt{PSTRESS} & 0 à 1000~kBar (0 à 100~GPa), pas de 100~kBar \\
+\texttt{KPAR} & \textbf{8} (pas de \texttt{NPAR}, demandé explicitement) \\
+\texttt{LWAVE / LCHARG} & \textbf{.TRUE.} / \textbf{.TRUE.} \\
+\texttt{ISTART} & 0 (graine 50~GPa) ; 1 (tous les autres points) \\
+\texttt{ICHARG} & non défini (graine, défaut 2) ; \textbf{1} (points chaînés, lit \texttt{CHGCAR}) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\texttt{INCAR.relax} du point graine (exemple, R-3m à 50~GPa) :
+\lstinputlisting{../../hp_curves/Al4C3_R-3m/P50/INCAR.relax}
+
+\texttt{INCAR.relax} d'un point chaîné (exemple, R-3m à 40~GPa, hérite de P50) :
+\lstinputlisting{../../hp_curves/Al4C3_R-3m/P40/INCAR.relax}
+
+\subsection{Scripts de soumission SLURM}
+
+Chaque phase possède un unique script \texttt{hp\_curves/Al4C3\_<phase>/run\_chain.sh} : c'est
+le mécanisme de soumission principal. Il réserve \textbf{48 cœurs sur un seul nœud}
+(\texttt{--ntasks=48}, ce qui cible naturellement les nœuds \texttt{node01--node08}, seule
+famille du cluster disposant de 48~CPU logiques) avec une limite de temps de 72~h (la partition
+\texttt{defq} n'a pas de limite de temps maximale), puis exécute en interne, l'un après
+l'autre, les 11 points de pression de la phase — chaque étape copiant
+\texttt{CONTCAR}/\texttt{WAVECAR}/\texttt{CHGCAR} du répertoire voisin juste terminé avant de
+relancer \texttt{vasp\_std} sur le même nœud :
+
+\texttt{run\_chain.sh} (exemple, R-3m — un seul job pour les 11 points de la phase) :
+\lstinputlisting{../../hp_curves/Al4C3_R-3m/run_chain.sh}
+
+Chaque répertoire \texttt{hp\_curves/Al4C3\_<phase>/P<pression>/} conserve en plus son propre
+\texttt{job.sh} individuel, \textbf{gardé uniquement comme filet de sécurité manuel} : si la
+chaîne d'une phase s'interrompt à un point donné (échec de convergence, panne), ce script
+permet de relancer \emph{uniquement ce point} à la main (en récupérant
+\texttt{CONTCAR}/\texttt{WAVECAR}/\texttt{CHGCAR} du point voisin déjà terminé) sans redemander
+un nœud pour rejouer toute la série depuis le début. Ce n'est pas le chemin utilisé par
+\texttt{submit\_chain.sh}.
+
+\texttt{job.sh} d'un point (exemple, R-3m à 40~GPa — repli manuel) :
+\lstinputlisting{../../hp_curves/Al4C3_R-3m/P40/job.sh}
+
+La soumission des \textbf{7 jobs} (un \texttt{run\_chain.sh} par phase) est orchestrée par
+\texttt{hp\_curves/submit\_chain.sh} :
+\lstinputlisting{../../hp_curves/submit_chain.sh}
+
+\subsection{Post-traitement : enthalpie et normalisation}
+
+VASP imprime directement l'enthalpie sous contrainte externe dans l'\texttt{OUTCAR} lorsque
+\texttt{PSTRESS} $\neq 0$ (ligne \texttt{"enthalpy is~~TOTEN~=~... eV~~P~V=~..."}), qui
+correspond exactement à $H = E + PV$ — c'est cette valeur qui est directement exploitée, sans
+recalcul. Au point \textbf{0~GPa} (\texttt{PSTRESS=0}), VASP n'imprime pas cette ligne
+(puisque $PV=0$, $H=E$) : \texttt{extract\_hp.py} retombe alors sur la ligne standard
+\texttt{"free~~energy~~~TOTEN~=~..."} de l'\texttt{OUTCAR}, équivalente à $H$ dans ce cas
+particulier. Comme les sept polymorphes n'ont pas le même nombre de formules Al$_4$C$_3$ par
+maille (2, 3 ou 4), l'enthalpie est normalisée par formule unitaire (7 atomes) avant
+comparaison entre phases. Le script \texttt{hp\_curves/extract\_hp.py} parcourt les 77
+répertoires, extrait $H$ et le nombre d'atomes, écrit \texttt{results\_hp.csv} (toutes les
+lignes, avec un statut \texttt{converged / unconverged / pending}) ainsi qu'un fichier
+\texttt{.dat} par phase (uniquement les points convergés) prêt à être tracé avec
+\texttt{pgfplots} (\texttt{\textbackslash addplot table}).
+
+À ce stade (aucun calcul soumis), \texttt{extract\_hp.py} rapporte $0/77$ points convergés —
+c'est l'état attendu avant lancement.
+
+\section{Points d'attention}
+
+\begin{itemize}
+  \item \textbf{Double détermination du point 0~GPa} : la campagne précédente avait déjà calculé
+  un point à 0~GPa, mais à \texttt{KSPACING=0.03} (plus fin) et sans chaînage WAVECAR/CHGCAR
+  depuis 50~GPa. Cette campagne calcule un \emph{second} point 0~GPa, cohérent avec le reste de
+  la série (\texttt{KSPACING=0.2}, chaîné depuis 10~GPa). Les deux résultats à 0~GPa pourront
+  être comparés comme vérification croisée (sensibilité au maillage \textbf{k}) ; c'est le point
+  \texttt{KSPACING=0.2} de cette campagne qui sera utilisé pour tracer la courbe H(P) continue,
+  par cohérence avec les 10 autres pressions de la même série.
+  \item \textbf{\texttt{KPAR=8} vs. le benchmark de parallélisation} : le benchmark réalisé sur
+  \texttt{As4S3\_28at} à \texttt{KSPACING=0.2} (27 points \textbf{k} irréductibles, configuration
+  la plus proche de celle utilisée ici) avait montré que \texttt{KPAR=4} était \emph{plus
+  rapide} que \texttt{KPAR=8} pour ce type de système ($\times1.55$ contre $\times1.13$ par
+  rapport à la référence). \texttt{KPAR=8} est néanmoins utilisé ici conformément à la demande
+  explicite ; il faut s'attendre à des temps de calcul plus longs qu'avec \texttt{KPAR=4}, sans
+  que cela remette en cause la limite de 6~h retenue par point.
+  \item \textbf{Chaînage strict, un seul job par phase} : les 11 points d'une phase s'exécutent
+  en séquence stricte \emph{à l'intérieur d'un seul job SLURM} — si VASP échoue ou stagne à un
+  point donné, \texttt{run\_chain.sh} s'arrête immédiatement (\texttt{exit 1}) et libère le
+  nœud sans lancer les points suivants de la phase (les 6 autres phases, chacune sur son propre
+  nœud, ne sont pas affectées). Contrairement à la campagne précédente (jobs indépendants
+  chaînés par \texttt{--dependency=afterok}), il n'y a plus de risque de queue SLURM entre deux
+  points, mais aussi plus de reprise automatique : une reprise manuelle avec le \texttt{job.sh}
+  du point interrompu (à l'image de ce qui a été fait pour \texttt{Al4C3\_Pnma\_0GPa} et
+  \texttt{Al4C3\_anti-CaFe2O4\_0GPa} dans la campagne précédente) sera nécessaire pour terminer
+  la branche, puis relancer manuellement les points suivants un par un ou reprendre
+  \texttt{run\_chain.sh} à partir du point qui a échoué.
+  \item \textbf{Restart électronique à maillage variable} : si le nombre de points \textbf{k}
+  irréductibles change légèrement d'un pas de pression à l'autre (la maille se contracte avec
+  la pression), VASP régénère automatiquement les fonctions d'onde/densité de charge manquantes
+  à partir du \texttt{WAVECAR}/\texttt{CHGCAR} disponibles (comportement standard
+  d'\texttt{ISTART=1}/\texttt{ICHARG=1} en cas de maillage incompatible) ; ce n'est pas bloquant
+  mais peut légèrement réduire le bénéfice du redémarrage à certains pas.
+\end{itemize}
+
+\section{État d'avancement}
+
+\begin{itemize}
+  \item[\textbf{Fait}] Arborescence des 77 répertoires générée
+  (\texttt{hp\_curves/gen\_hp\_runs.py}), avec \texttt{POSCAR}/\texttt{POTCAR} des 7 points
+  graines copiés depuis les relaxations 50~GPa existantes, et \texttt{INCAR.relax}/\texttt{job.sh}
+  écrits pour les 77 points (chaînage \texttt{WAVECAR}+\texttt{CHGCAR}+\texttt{CONTCAR} inclus).
+  \item[\textbf{Fait}] Script d'orchestration des soumissions avec dépendances SLURM
+  (\texttt{hp\_curves/submit\_chain.sh}) et script d'extraction/normalisation des résultats
+  (\texttt{hp\_curves/extract\_hp.py}), tous deux testés (extraction : $0/77$ convergés, comme
+  attendu avant tout lancement).
+  \item[\textbf{En attente}] Soumission effective des 77 jobs sur le cluster —
+  \textbf{en attente de votre validation}.
+  \item[\textbf{À venir}] Une fois la campagne terminée : ré-exécution de
+  \texttt{extract\_hp.py}, puis tracé de la figure $H(P)$ pour les sept phases entre 0 et
+  100~GPa et détermination du domaine de stabilité de chaque polymorphe (enveloppe inférieure
+  des courbes $H(P)$, i.e. la phase de plus basse enthalpie à chaque pression), dans un rapport
+  de résultats séparé.
+\end{itemize}
+
+\end{document}

@@ -1,5 +1,5 @@
 #!/bin/sh
-#SBATCH --job-name=Al4C3_antiCaFe2O4_0GPa
+#SBATCH --job-name=Al4C3_Pnma-VII_0GPa
 #SBATCH --nodes=1
 #SBATCH --ntasks=40
 #SBATCH --exclude=node01,node02,node03,node04,node05,node06,node07,node08
@@ -15,9 +15,8 @@ export OMP_NUM_THREADS=1
 export PATH=/opt/ohpc/pub/software/vasp.6.4.2:$PATH
 ulimit -s unlimited
 
-# restart (attempt2): continuing from CONTCAR of attempt1, which hit the
-# 12h time limit at ionic step 23/200 (still converging, dE=-1.05E-3)
-cp CONTCAR POSCAR
+cp ../Al4C3_Pnma-VII_50GPa/CONTCAR.relaxed POSCAR
+cp ../Al4C3_Pnma-VII_50GPa/POTCAR POTCAR
 
 cp INCAR.relax INCAR
 { time -p srun --mpi=pmi2 --ntasks=$SLURM_NTASKS --cpus-per-task=1 --threads-per-core=1 vasp_std ; } 2>> vasp.log

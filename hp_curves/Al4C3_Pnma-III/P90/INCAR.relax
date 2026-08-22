@@ -1,0 +1,33 @@
+SYSTEM = Al4C3 Pnma-III - H(P) scan @ 90 GPa (ISIF=8)
+
+# electronic
+PREC    = Accurate
+ENCUT   = 600
+EDIFF   = 1E-5
+ISMEAR  = 0
+SIGMA   = 0.05
+
+# k-points (coarse mesh for the H(P) scan)
+KSPACING = 0.2
+KGAMMA   = .TRUE.
+
+# ionic + volume relaxation under external pressure, cell shape fixed
+IBRION  = 2
+ISIF    = 8
+NSW     = 200
+EDIFFG  = -0.01
+PSTRESS = 900.0        ! kBar = 90 GPa
+
+# electronic restart from the neighbouring pressure point in this branch:
+# ISTART=1 reads WAVECAR, ICHARG=1 reads CHGCAR (both copied by job.sh)
+ISTART  = 1
+ICHARG  = 1
+
+# parallelization (per benchmark: KPAR>1 outperforms NPAR>1 on these
+# systems; user-specified KPAR=8, NPAR left at default)
+KPAR    = 8
+
+# output -- WAVECAR and CHGCAR are both saved so the *next* pressure
+# point in the chain can restart from them (ISTART=1, ICHARG=1)
+LWAVE   = .TRUE.
+LCHARG  = .TRUE.
