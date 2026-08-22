@@ -1,0 +1,366 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{booktabs}
+\usepackage{siunitx}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{caption}
+\usepackage{enumitem}
+\usepackage{amsmath}
+
+\sisetup{detect-weight=true, detect-family=true}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!50!black,
+  urlcolor=blue!50!black,
+  citecolor=blue!50!black,
+  pdftitle={Benchmark VASP - parallelisation NPAR/KPAR},
+  pdfauthor={Pr. John Akapulco}
+}
+
+\title{\vspace{-1.5cm}Benchmark de performance VASP 6.5.0\\[2pt]
+\large Réglage de la parallélisation (NPAR/KPAR) et scaling en nombre de tâches MPI}
+\author{Pr. John Akapulco \\ \small \href{mailto:computchem86@gmail.com}{computchem86@gmail.com}}
+\date{22 août 2026}
+
+\begin{document}
+\maketitle
+\vspace{-0.5cm}
+
+\begin{abstract}
+\noindent
+Ce rapport présente un benchmark de performance de VASP 6.5.0 sur le cluster de calcul local,
+réalisé en amont de la campagne de relaxation des polymorphes Al$_4$C$_3$. L'objectif est de
+déterminer, pour des calculs de type SCF (point unique), la combinaison de paramètres de
+parallélisation (\texttt{NPAR}, \texttt{KPAR}) et le nombre de tâches MPI qui minimisent le temps
+CPU, sur trois systèmes de taille et de densité de points \textbf{k} différentes. Le meilleur
+compromis obtenu est \texttt{NPAR=1} avec \texttt{KPAR} égal à 4 ou 8 selon le système, apportant
+un gain allant de $\times1.5$ à $\times7.5$ par rapport à la configuration par défaut
+(\texttt{NPAR=KPAR=1}), tandis que l'augmentation seule du nombre de tâches MPI sans découpage en
+points \textbf{k} sature rapidement.
+\end{abstract}
+
+\section{Objectifs}
+
+Avant de lancer les relaxations ioniques des polymorphes Al$_4$C$_3$ (calculs coûteux, jusqu'à
+28 atomes, cellules à 0 et 50~GPa), un benchmark de performance a été mené pour identifier une
+configuration de parallélisation efficace sur le cluster SLURM local. Deux questions sont posées :
+
+\begin{enumerate}[label=(\alph*)]
+  \item \textbf{Partie A} — à nombre de tâches MPI fixe (\texttt{ntasks=40}), quelle combinaison
+  \texttt{NPAR}/\texttt{KPAR} minimise le temps de calcul, et cette combinaison optimale
+  dépend-elle du système traité ?
+  \item \textbf{Partie B} — à parallélisation par bandes/points \textbf{k} désactivée
+  (\texttt{NPAR=KPAR=1}), comment le temps de calcul évolue-t-il avec le nombre de tâches MPI
+  seul (4 à 40) ?
+\end{enumerate}
+
+\section{Configuration matérielle et logicielle}
+
+\subsection{Cluster}
+
+Les calculs ont été soumis via SLURM (partition \texttt{defq}) sur des nœuds mono-nœud
+(\texttt{--nodes=1}), avec deux familles de nœuds au matériel distinct présentes sur le cluster :
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lccc}
+\toprule
+Famille & Nœuds & Configuration & CPU logiques \\
+\midrule
+\texttt{48c\_2thread} & node01--node08 & 2 sockets $\times$ 12 c\oe urs $\times$ 2 threads (SMT) & 48 \\
+\texttt{40c\_1thread} & node09--node16 & 2 sockets $\times$ 20 c\oe urs $\times$ 1 thread (SMT off) & 40 \\
+\bottomrule
+\end{tabular}
+\caption{Familles de nœuds de calcul utilisées dans le benchmark.}
+\end{table}
+
+Le nœud d'exécution n'était pas fixé explicitement dans les scripts de soumission ; l'ordonnanceur
+SLURM a donc réparti les runs entre les deux familles (colonne \texttt{node\_family} du fichier de
+résultats). Ce point est repris comme limite méthodologique en section~\ref{sec:limites}.
+
+\subsection{Code et paramètres communs}
+
+VASP 6.5.0 (\texttt{vasp\_std}, mode PAW), MPI Intel (\texttt{impi/2021.13}), un thread OpenMP par
+tâche (\texttt{OMP\_NUM\_THREADS=1}). Tous les calculs sont des points SCF simples
+(\texttt{IBRION=-1}, \texttt{NSW=0}, pas de relaxation ionique), avec les paramètres communs
+suivants~:
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+Paramètre & Valeur \\
+\midrule
+\texttt{PREC} & Accurate \\
+\texttt{ENCUT} & 600~eV \\
+\texttt{EDIFF} & $10^{-5}$ \\
+\texttt{ISMEAR / SIGMA} & 0 / 0.05 \\
+\texttt{LWAVE / LCHARG} & .FALSE. / .FALSE. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Systèmes de test}
+
+Trois systèmes de taille croissante et de maillages \textbf{k} très différents (à
+\texttt{KSPACING} fixé par système) ont été utilisés, afin de vérifier si la configuration
+optimale dépend du nombre de points \textbf{k} irréductibles :
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lcccc}
+\toprule
+Système & Atomes & Formule & \texttt{KSPACING} (\AA$^{-1}$) & Points \textbf{k} irréductibles \\
+\midrule
+\texttt{Ta4C3\_7at}   & 7  & Ta$_4$C$_3$   & 0.03 & 189 \\
+\texttt{Ccubic\_16at} & 16 & C$_{16}$      & 0.03 & 105 \\
+\texttt{As4S3\_28at}  & 28 & As$_{16}$S$_{12}$ & 0.20 & 27 \\
+\bottomrule
+\end{tabular}
+\caption{Systèmes de test, densité de maillage \textbf{k} et nombre de points \textbf{k}
+irréductibles résultant (grille de Monkhorst--Pack centrée $\Gamma$).}
+\end{table}
+
+Le \texttt{KSPACING} de \texttt{As4S3\_28at} est volontairement plus lâche (0.20 contre 0.03) et a
+été gardé identique sur tous ses runs (Parties A et B), de sorte que les 10 mesures sur ce système
+restent directement comparables entre elles.
+
+\section{Méthodologie}
+
+Les runs ont été générés automatiquement (\texttt{gen\_runs.py}) : POSCAR/POTCAR communs par
+système, INCAR et script SLURM générés par combinaison, limite de temps de 30~min par job.
+22~jobs ont été soumis (IDs SLURM 58341--58362) et suivis jusqu'à completion via une boucle de
+polling (\texttt{wait\_loop.sh}, intervalle 60~s).
+
+\begin{itemize}
+  \item \textbf{Partie A} (18 runs) : les 3 systèmes $\times$ 6 combinaisons
+  \texttt{(NPAR, KPAR)} $\in \{(1,1),(4,2),(2,4),(1,4),(8,1),(1,8)\}$, à \texttt{ntasks=40} fixe.
+  \item \textbf{Partie B} (4 runs) : le système \texttt{As4S3\_28at} seul, à
+  \texttt{NPAR=KPAR=1} fixe, pour \texttt{ntasks} $\in \{4,8,16,24\}$ — complété par le point
+  \texttt{ntasks=40, NPAR=KPAR=1} déjà mesuré en Partie A.
+\end{itemize}
+
+Le temps CPU (\texttt{cpu\_time\_s}) et le temps écoulé (\texttt{elapsed\_time\_s}) sont extraits de
+la sortie \texttt{time -p} du wrapper \texttt{srun}. Chaque configuration n'a été mesurée
+\textbf{qu'une seule fois} (pas de répétition ni d'écart-type~; voir limites,
+section~\ref{sec:limites}).
+
+\section{Résultats}
+
+\subsection{Partie A --- sweep NPAR/KPAR à \texttt{ntasks=40}}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lccS[table-format=3.1]S[table-format=1.2]}
+\toprule
+Système & NPAR & KPAR & {Temps CPU (s)} & {Accélération} \\
+\midrule
+Ta4C3\_7at   & 1 & 1 & 437.9 & 1.00 \\
+Ta4C3\_7at   & 4 & 2 & 268.4 & 1.63 \\
+Ta4C3\_7at   & 2 & 4 & 267.6 & 1.64 \\
+Ta4C3\_7at   & 1 & 4 & \bfseries 232.0 & \bfseries 1.89 \\
+Ta4C3\_7at   & 8 & 1 & 369.9 & 1.18 \\
+Ta4C3\_7at   & 1 & 8 & 277.5 & 1.58 \\
+\midrule
+Ccubic\_16at & 1 & 1 & 265.7 & 1.00 \\
+Ccubic\_16at & 4 & 2 & 46.1  & 5.77 \\
+Ccubic\_16at & 2 & 4 & 39.2  & 6.77 \\
+Ccubic\_16at & 1 & 4 & 44.2  & 6.01 \\
+Ccubic\_16at & 8 & 1 & 69.7  & 3.81 \\
+Ccubic\_16at & 1 & 8 & \bfseries 35.5  & \bfseries 7.49 \\
+\midrule
+As4S3\_28at  & 1 & 1 & 372.5 & 1.00 \\
+As4S3\_28at  & 4 & 2 & 339.7 & 1.10 \\
+As4S3\_28at  & 2 & 4 & 313.2 & 1.19 \\
+As4S3\_28at  & 1 & 4 & \bfseries 240.6 & \bfseries 1.55 \\
+As4S3\_28at  & 8 & 1 & 375.6 & 0.99 \\
+As4S3\_28at  & 1 & 8 & 330.8 & 1.13 \\
+\bottomrule
+\end{tabular}
+\caption{Temps CPU et accélération par rapport à \texttt{NPAR=KPAR=1}, à \texttt{ntasks=40} fixe.
+La meilleure combinaison par système est en gras.}
+\label{tab:partA}
+\end{table}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=\textwidth, height=7cm,
+  ybar, bar width=5pt,
+  ymode=log,
+  ylabel={Temps CPU (s), échelle log},
+  symbolic x coords={1-1,4-2,2-4,1-4,8-1,1-8},
+  xtick=data,
+  xlabel={NPAR-KPAR},
+  legend pos=outer north east,
+  legend style={font=\small},
+  enlarge x limits=0.12,
+  nodes near coords style={font=\tiny},
+]
+\addplot coordinates {(1-1,437.929) (4-2,268.370) (2-4,267.591) (1-4,231.992) (8-1,369.869) (1-8,277.543)};
+\addplot coordinates {(1-1,265.650) (4-2,46.068) (2-4,39.241) (1-4,44.227) (8-1,69.666) (1-8,35.479)};
+\addplot coordinates {(1-1,372.519) (4-2,339.687) (2-4,313.182) (1-4,240.605) (8-1,375.632) (1-8,330.788)};
+\legend{Ta4C3\_7at (189 k-pts), Ccubic\_16at (105 k-pts), As4S3\_28at (27 k-pts)}
+\end{axis}
+\end{tikzpicture}
+\caption{Temps CPU (échelle logarithmique) pour les 6 combinaisons NPAR/KPAR testées, à
+\texttt{ntasks=40}, pour les 3 systèmes. Le gain lié à \texttt{KPAR>1} est d'autant plus marqué
+que le système a beaucoup de points \textbf{k} irréductibles.}
+\label{fig:partA}
+\end{figure}
+
+\subsection{Partie B --- scaling en nombre de tâches MPI (As4S3\_28at, NPAR=KPAR=1)}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{cSSlc}
+\toprule
+{ntasks} & {Temps CPU (s)} & {Accél. vs 4} & Nœud & Famille \\
+\midrule
+4  & 851.654 & 1.00 & node15 & 40c\_1thread \\
+8  & 536.230 & 1.59 & node16 & 40c\_1thread \\
+16 & 539.682 & 1.58 & node04 & 48c\_2thread \\
+24 & 408.179 & 2.09 & node04 & 48c\_2thread \\
+40 & 372.519 & 2.29 & node04 & 48c\_2thread \\
+\bottomrule
+\end{tabular}
+\caption{Temps CPU en fonction du nombre de tâches MPI, à \texttt{NPAR=KPAR=1} (pas de
+parallélisation par points \textbf{k} ni par bandes). Le changement de famille de nœud entre
+\texttt{ntasks=8} et \texttt{ntasks=16} est indiqué (voir section~\ref{sec:limites}).}
+\label{tab:partB}
+\end{table}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=\textwidth, height=7cm,
+  xlabel={Nombre de tâches MPI (ntasks)},
+  ylabel={Temps CPU (s)},
+  xmode=log, log basis x=2,
+  xtick={4,8,16,24,40},
+  xticklabels={4,8,16,24,40},
+  legend pos=north east,
+  legend style={font=\small},
+  grid=major,
+]
+\addplot[mark=*, thick, color=blue!70!black]
+  coordinates {(4,851.654) (8,536.230) (16,539.682) (24,408.179) (40,372.519)};
+\addlegendentry{Mesuré (NPAR=KPAR=1)}
+\addplot[mark=none, dashed, color=gray]
+  coordinates {(4,851.654) (40,85.1654)};
+\addlegendentry{Scaling linéaire idéal}
+\end{axis}
+\end{tikzpicture}
+\caption{Temps CPU vs nombre de tâches MPI pour \texttt{As4S3\_28at}, comparé au scaling linéaire
+idéal extrapolé depuis \texttt{ntasks=4}. Le décrochage est net dès \texttt{ntasks=8} : sans
+découpage en points \textbf{k} (\texttt{KPAR=1}), le système (27 points \textbf{k} irréductibles)
+sature bien avant \texttt{ntasks=40}.}
+\label{fig:partB}
+\end{figure}
+
+\section{Discussion}
+
+\subsection{Effet de NPAR/KPAR}
+
+Sur les trois systèmes, \texttt{KPAR=4} ou \texttt{KPAR=8} avec \texttt{NPAR=1} domine
+systématiquement les combinaisons à \texttt{NPAR>1} (tableau~\ref{tab:partA}, figure~\ref{fig:partA}) :
+
+\begin{itemize}
+  \item \textbf{Ccubic\_16at} (105 points \textbf{k}) : gain maximal $\times7.49$ avec
+  \texttt{KPAR=8} — le système a largement assez de points \textbf{k} pour remplir 8 groupes.
+  \item \textbf{Ta4C3\_7at} (189 points \textbf{k}) : gain maximal $\times1.89$ seulement avec
+  \texttt{KPAR=4}, malgré un nombre de points \textbf{k} très élevé — ce système, plus petit
+  (7 atomes), est probablement limité par un autre facteur (base d'ondes planes réduite, overhead
+  de communication) plutôt que par le découpage \textbf{k}.
+  \item \textbf{As4S3\_28at} (27 points \textbf{k}) : gain maximal $\times1.55$ avec
+  \texttt{KPAR=4} ; \texttt{KPAR=8} est ici \emph{moins} bon (1.13$\times$) que \texttt{KPAR=4}
+  (1.55$\times$), et \texttt{NPAR=8/KPAR=1} n'apporte aucun gain (0.99$\times$). Avec seulement
+  27 points \textbf{k}, répartis sur 8 groupes MPI, chaque groupe ne reçoit que 3--4 points
+  \textbf{k} et se retrouve avec peu de tâches par groupe (5 rangs/groupe) : l'overhead de
+  communication au sein de chaque groupe l'emporte sur le gain de parallélisation en \textbf{k}.
+\end{itemize}
+
+\textbf{Aucune combinaison à \texttt{NPAR>1} testée (4/2, 2/4, 8/1) ne bat la meilleure
+combinaison à \texttt{NPAR=1}} sur un seul des trois systèmes. La parallélisation par bandes
+(\texttt{NPAR}) semble ici globalement moins efficace que la parallélisation par points
+\textbf{k} (\texttt{KPAR}) pour ces tailles de système et ce nombre de tâches.
+
+\subsection{Effet du nombre de tâches MPI seul}
+
+Sans découpage \textbf{k} (\texttt{NPAR=KPAR=1}, tableau~\ref{tab:partB},
+figure~\ref{fig:partB}), le passage de 4 à 40 tâches ne procure qu'un facteur $\times2.29$, très
+loin du $\times10$ idéal. L'essentiel du décrochage intervient déjà entre \texttt{ntasks=4} et
+\texttt{ntasks=8} (efficacité de $\sim$79~\% en doublant les tâches), puis le gain devient marginal
+au-delà de 16 tâches. Ceci confirme, en creux, l'intérêt de la Partie A : passer de 40 tâches
+« brutes » à 40 tâches réparties en \texttt{KPAR=4} groupes de points \textbf{k} rapporte plus
+que d'augmenter le nombre de tâches MPI sans structurer le parallélisme.
+
+\section{Recommandations pratiques}
+
+Pour les calculs de relaxation Al$_4$C$_3$ (28 atomes, \texttt{ENCUT=600}, cellules à 0 et
+50~GPa, \texttt{KSPACING=0.03}, donc un nombre de points \textbf{k} irréductibles probablement
+élevé comme \texttt{Ta4C3\_7at}/\texttt{Ccubic\_16at} plutôt que comme
+\texttt{As4S3\_28at}) :
+
+\begin{itemize}
+  \item Utiliser \texttt{NPAR=1} par défaut, et régler \texttt{KPAR} en fonction du nombre de
+  points \textbf{k} irréductibles réel du système (\texttt{KPAR=4} est un choix sûr et
+  quasi-optimal dans les trois cas testés ; \texttt{KPAR=8} n'aide que si le système a
+  suffisamment de points \textbf{k} pour remplir 8 groupes sans sous-alimenter chaque groupe).
+  \item Ne pas dépasser \texttt{ntasks=24--40} sans \texttt{KPAR>1} : au-delà, le gain marginal
+  est faible pour des systèmes de taille comparable (16--28 atomes).
+  \item Vérifier le nombre de points \textbf{k} irréductibles (ligne \texttt{"irreducible
+  k-points"} de l'\texttt{OUTCAR}) avant de figer \texttt{KPAR} pour un nouveau polymorphe, plutôt
+  que de réutiliser aveuglément la config optimale d'un autre système.
+\end{itemize}
+
+C'est la configuration \texttt{NPAR=1 / KPAR=4} qui a été retenue dans les scripts de relaxation
+Al$_4$C$_3$ (\texttt{vasp6\_relax.sh}, cf.\ \texttt{INCAR.relax}) suite à ce benchmark.
+
+\section{Limites de l'étude}
+\label{sec:limites}
+
+\begin{itemize}
+  \item \textbf{Une seule mesure par configuration} : aucune répétition n'a été effectuée, donc
+  aucune barre d'incertitude n'est disponible. La variabilité liée à la charge du nœud ou au
+  réseau n'est pas quantifiée.
+  \item \textbf{Hétérogénéité matérielle non contrôlée en Partie B} : les points
+  \texttt{ntasks=4} et \texttt{ntasks=8} ont tourné sur des nœuds sans SMT
+  (\texttt{40c\_1thread}), tandis que \texttt{ntasks=16, 24, 40} ont tourné sur un nœud avec SMT
+  actif (\texttt{48c\_2thread}). La comparaison brute entre ces deux groupes de points n'isole
+  donc pas purement l'effet du nombre de tâches.
+  \item \textbf{Systèmes non représentatifs à 100\%} des polymorphes Al$_4$C$_3$ : les trois
+  systèmes de test diffèrent en composition chimique et en \texttt{KSPACING}. Les conclusions sur
+  la meilleure combinaison \texttt{NPAR}/\texttt{KPAR} sont extrapolées par analogie sur le
+  nombre de points \textbf{k}, pas vérifiées directement sur Al$_4$C$_3$.
+  \item Les temps rapportés sont des temps CPU/écoulés pour un unique point SCF
+  (\texttt{IBRION=-1}), non pour une relaxation ionique complète ; l'INCAR de production diffère
+  légèrement (\texttt{IBRION=2}, \texttt{ISIF=8}, \texttt{EDIFFG=-0.01}).
+\end{itemize}
+
+\section{Conclusion}
+
+Le découpage par points \textbf{k} (\texttt{KPAR}) est, sur les trois systèmes testés, nettement
+plus efficace que le découpage par bandes (\texttt{NPAR}) ou que la simple augmentation du nombre
+de tâches MPI. La configuration \texttt{NPAR=1 / KPAR=4} constitue un choix robuste par défaut
+(gain $\times1.5$ à $\times6$ selon le système), avec un gain supplémentaire possible via
+\texttt{KPAR=8} uniquement pour les systèmes disposant d'un grand nombre de points \textbf{k}
+irréductibles. Ce réglage a été adopté pour la campagne de relaxation des polymorphes Al$_4$C$_3$.
+
+\appendix
+\section{Détails de soumission}
+
+22 jobs soumis sur SLURM (partition \texttt{defq}), IDs 58341 à 58362, générés et suivis via
+\texttt{benchmarks/scf\_speed\_test/gen\_runs.py} et \texttt{wait\_loop.sh}. Données brutes :
+\texttt{benchmarks/scf\_speed\_test/results\_cpu\_time.csv}.
+
+\end{document}
