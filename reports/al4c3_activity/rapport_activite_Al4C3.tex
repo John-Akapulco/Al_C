@@ -1,0 +1,335 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{booktabs}
+\usepackage{siunitx}
+\usepackage[table]{xcolor}
+\usepackage{hyperref}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{caption}
+\usepackage{enumitem}
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+\sisetup{detect-weight=true, detect-family=true}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!50!black,
+  urlcolor=blue!50!black,
+  citecolor=blue!50!black,
+  pdftitle={Rapport d'activite - Al4C3 sous pression},
+  pdfauthor={Pr. John Akapulco}
+}
+
+\title{\vspace{-1.5cm}Rapport d'activité\\[2pt]
+\large Étude DFT des polymorphes d'Al$_4$C$_3$ sous pression (0 et 50~GPa)}
+\author{Pr. John Akapulco \\ \small \href{mailto:computchem86@gmail.com}{computchem86@gmail.com}}
+\date{22 août 2026}
+
+\begin{document}
+\maketitle
+\vspace{-0.5cm}
+
+\begin{abstract}
+\noindent
+Ce rapport dresse le bilan de la campagne de relaxation structurale DFT (VASP, PBE) menée sur
+sept polymorphes candidats du carbure d'aluminium Al$_4$C$_3$, à pression ambiante et à
+50~GPa. Sur les 14 calculs prévus, 11 ont convergé ; 3 relaxations à 0~GPa sont encore en
+cours. À 50~GPa (jeu de données complet), le polymorphe \textbf{Pbam} est le plus stable
+($-3.097$~eV/atome), suivi de près par \textbf{Pnma} et \textbf{Pnma-III}. À 0~GPa (jeu de
+données partiel), c'est \textbf{R-3m} qui domine ($-6.189$~eV/atome) — alors qu'il devient le
+\emph{moins} stable des sept candidats à 50~GPa. Ce renversement d'ordre de stabilité entre 0
+et 50~GPa est le résultat le plus marquant de cette étude à ce stade, et suggère une
+transition de phase que les calculs encore en cours permettront de mieux cerner.
+\end{abstract}
+
+\section{Contexte et objectifs}
+
+Ce travail s'inscrit dans le projet \emph{Aluminium carbides under pressure}, qui vise à
+caractériser la stabilité structurale d'Al$_4$C$_3$ et des phases apparentées en fonction de
+la pression par des méthodes de calcul (DFT). L'objectif de la campagne présentée ici est de
+comparer, à pression nulle et à 50~GPa, l'énergie totale de sept structures cristallines
+candidates pour Al$_4$C$_3$, afin d'identifier le polymorphe thermodynamiquement stable à
+chaque pression et de repérer d'éventuelles transitions de phase induites par la pression.
+
+\section{Structures étudiées}
+
+Les sept polymorphes candidats ont été générés à partir de groupes d'espace ou de structures
+de référence, puis symétrisés (\texttt{findsym}, \texttt{spglib}) avant relaxation :
+
+\begin{table}[h]
+\centering
+\begin{tabular}{llc}
+\toprule
+Polymorphe & Origine & Atomes/maille \\
+\midrule
+I-43d            & structure candidate, \texttt{findsym}                         & 28 \\
+R-3m             & structure candidate, \texttt{findsym}                         & 21 \\
+Pbam             & structure candidate, \texttt{findsym}                         & 14 \\
+anti-CaFe$_2$O$_4$ & structure type anti-CaFe$_2$O$_4$, volume pré-mis à l'échelle & 28 \\
+Pnma (POSCAR.IV) & variante \texttt{Pnma}, symétrisée via \texttt{spglib}        & 28 \\
+Pnma-III         & variante \texttt{Pnma}, symétrisée via \texttt{spglib}        & 28 \\
+Pnma-VII         & CIF \texttt{findsym} ($P2_1/n2_1/m2_1/a$), \texttt{spglib}    & 28 \\
+\bottomrule
+\end{tabular}
+\caption{Les sept polymorphes d'Al$_4$C$_3$ relaxés dans cette campagne. Trois variantes
+distinctes de type \texttt{Pnma} (IV, III, VII) sont incluses, correspondant à des
+occupations/distorsions différentes du même groupe d'espace.}
+\end{table}
+
+Chaque polymorphe a été relaxé à deux pressions : \textbf{0~GPa} (pression ambiante) et
+\textbf{50~GPa}, soit 14 calculs de relaxation au total.
+
+\section{Méthodologie}
+
+\subsection{Paramètres DFT communs}
+
+Tous les calculs utilisent VASP en mode PAW avec la fonctionnelle PBE, et les paramètres
+communs suivants :
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+Paramètre & Valeur \\
+\midrule
+\texttt{PREC} & Accurate \\
+\texttt{ENCUT} & 600~eV \\
+\texttt{EDIFF} (convergence électronique) & $10^{-5}$~eV \\
+\texttt{EDIFFG} (convergence ionique) & $-0.01$~eV/\AA\ (critère sur les forces) \\
+\texttt{ISMEAR / SIGMA} & 0 / 0.05 \\
+\texttt{KSPACING / KGAMMA} & 0.03~\AA$^{-1}$ / .TRUE. \\
+\texttt{IBRION / ISIF} & 2 / 8 (relaxation ions + volume, forme de maille fixée) \\
+\texttt{NSW} & 200 \\
+\texttt{PSTRESS} & 0.0 ou 500.0~kBar (0 ou 50~GPa) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\texttt{ISIF=8} relaxe les positions atomiques et le volume de la maille tout en conservant sa
+forme (donc le groupe d'espace du polymorphe de départ).
+
+\subsection{Infrastructure et parallélisation}
+
+Les calculs tournent sur le cluster SLURM local (partition \texttt{defq}, \texttt{ntasks=40}).
+Deux ajustements notables ont été appliqués en cours de campagne, suite à des incidents
+rencontrés (détaillés en section~\ref{sec:incidents}) et à un benchmark de performance dédié :
+
+\begin{itemize}
+  \item \textbf{Migration logicielle} : passage du module \texttt{vasp/6.5.0} vers une
+  installation \texttt{vasp.6.4.2} référencée directement par \texttt{PATH}, suite à des
+  instabilités observées avec 6.5.0 sur plusieurs runs (traces
+  \texttt{vasp.log.attempt*\_v650} conservées dans les dossiers concernés).
+  \item \textbf{Choix de nœuds} : exclusion des nœuds \texttt{node01--node08} (SMT actif,
+  48 CPU logiques / 24 cœurs physiques) au profit des nœuds \texttt{node09--node16}
+  (40 cœurs physiques, SMT désactivé), et fixation de \texttt{threads-per-core=1}.
+  \item \textbf{Parallélisation} : \texttt{NPAR=4/KPAR=2} par défaut dans les \texttt{INCAR}
+  d'origine ; un benchmark dédié (voir \texttt{benchmarks/scf\_speed\_test/report/}) a montré
+  que \texttt{NPAR=1/KPAR=4} est en pratique plus performant sur ce type de système, et ce
+  réglage a été adopté pour les nouveaux runs.
+\end{itemize}
+
+\section{Résultats}
+
+\subsection{État de convergence}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lccc}
+\toprule
+Polymorphe & 0~GPa & 50~GPa & Dernier pas ionique (0~GPa) \\
+\midrule
+I-43d          & \checkmark\ convergé & \checkmark\ convergé & 3 \\
+Pbam           & \checkmark\ convergé & \checkmark\ convergé & 14 \\
+Pnma-III       & \checkmark\ convergé & \checkmark\ convergé & 25 \\
+Pnma           & \textbf{en cours (restart)} & \checkmark\ convergé & 21+ (relance après timeout SLURM) \\
+Pnma-VII       & \textbf{en cours} & \checkmark\ convergé & — (démarré récemment) \\
+R-3m           & \checkmark\ convergé & \checkmark\ convergé & 9 \\
+anti-CaFe$_2$O$_4$ & \textbf{en cours} & \checkmark\ convergé & — (en cours depuis $\sim$12~h) \\
+\midrule
+\textbf{Total} & \textbf{4/7} & \textbf{7/7} & \\
+\bottomrule
+\end{tabular}
+\caption{État de convergence des 14 relaxations. Convergence = critère de forces
+\texttt{EDIFFG=-0.01} eV/\AA\ atteint (message \emph{"reached required accuracy"} dans
+l'\texttt{OUTCAR}).}
+\label{tab:convergence}
+\end{table}
+
+\subsection{Classement énergétique à 50~GPa (jeu complet)}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{clS[table-format=-2.4]}
+\toprule
+Rang & Polymorphe & {$E_0$/atome (eV)} \\
+\midrule
+1 & Pbam             & -3.0971 \\
+2 & Pnma             & -3.0954 \\
+3 & Pnma-III         & -3.0920 \\
+4 & anti-CaFe$_2$O$_4$ & -3.0573 \\
+5 & I-43d            & -2.9916 \\
+6 & Pnma-VII         & -2.9689 \\
+7 & R-3m             & -2.9529 \\
+\bottomrule
+\end{tabular}
+\caption{Classement par énergie totale par atome à 50~GPa (les 7 polymorphes ont convergé).
+Plus la valeur est négative, plus le polymorphe est stable.}
+\label{tab:rank50}
+\end{table}
+
+\subsection{Classement énergétique à 0~GPa (jeu partiel, 4/7)}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{clS[table-format=-2.4]}
+\toprule
+Rang (partiel) & Polymorphe & {$E_0$/atome (eV)} \\
+\midrule
+1 & R-3m      & -6.1893 \\
+2 & Pnma-III  & -6.0508 \\
+3 & Pbam      & -6.0314 \\
+4 & I-43d     & -5.7479 \\
+\rowcolor{black!5} — & Pnma           & \emph{en cours} \\
+\rowcolor{black!5} — & Pnma-VII       & \emph{en cours} \\
+\rowcolor{black!5} — & anti-CaFe$_2$O$_4$ & \emph{en cours} \\
+\bottomrule
+\end{tabular}
+\caption{Classement partiel à 0~GPa. Le classement complet nécessite la fin des 3 calculs en
+cours ; il pourrait changer, notamment si l'un des trois candidats manquants s'avère plus
+stable que R-3m.}
+\label{tab:rank0}
+\end{table}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=\textwidth, height=7.5cm,
+  ybar, bar width=10pt,
+  ylabel={$E_0$/atome (eV)},
+  symbolic x coords={I-43d,Pbam,Pnma-III,Pnma,Pnma-VII,R-3m,anti-CaFe2O4},
+  xtick=data,
+  x tick label style={rotate=25, anchor=east, font=\small},
+  legend pos=south west,
+  legend style={font=\small},
+  enlarge x limits=0.08,
+  ymin=-6.5, ymax=-2.5,
+]
+\addplot coordinates {(I-43d,-5.7479) (Pbam,-6.0314) (Pnma-III,-6.0508) (R-3m,-6.1893)};
+\addplot coordinates {(I-43d,-2.9916) (Pbam,-3.0971) (Pnma-III,-3.0920) (Pnma,-3.0954) (Pnma-VII,-2.9689) (R-3m,-2.9529) (anti-CaFe2O4,-3.0573)};
+\legend{0 GPa (4/7 convergés), 50 GPa (7/7 convergés)}
+\end{axis}
+\end{tikzpicture}
+\caption{Énergie totale par atome pour chaque polymorphe, à 0 et 50~GPa. Les barres manquantes
+à 0~GPa correspondent aux calculs encore en cours (Pnma, Pnma-VII, anti-CaFe$_2$O$_4$). Noter
+le renversement d'ordre entre R-3m (le plus stable à 0~GPa) et Pbam/Pnma (les plus stables à
+50~GPa).}
+\label{fig:ranking}
+\end{figure}
+
+\section{Discussion}
+
+\subsection{Un renversement de stabilité entre 0 et 50~GPa}
+
+Le résultat le plus notable, déjà visible sur le sous-ensemble convergé (figure~\ref{fig:ranking}),
+est l'inversion de classement de \textbf{R-3m} : le plus stable des candidats à 0~GPa
+($-6.189$~eV/atome, en avance de 0.14~eV/atome sur son second), il devient le
+\emph{moins} stable des sept à 50~GPa ($-2.953$~eV/atome, dernier du classement). À l'inverse,
+\textbf{Pbam} et \textbf{Pnma} progressent d'un rang médian/pending à 0~GPa vers la première
+place à 50~GPa. Ce type de croisement est la signature attendue d'une transition de phase
+induite par la pression : le compactage de la maille sous 50~GPa favorise apparemment des
+arrangements structuraux (Pbam, Pnma) moins denses/efficaces à pression ambiante.
+
+Cette observation reste à confirmer avec le jeu de données complet à 0~GPa (3 calculs encore
+en cours), notamment pour vérifier qu'aucun des candidats manquants (Pnma, Pnma-VII,
+anti-CaFe$_2$O$_4$) ne dépasse R-3m à pression ambiante. Une fois la relaxation à 0~GPa
+achevée pour tous les polymorphes, une estimation plus fine de la pression de transition
+nécessiterait des points de pression intermédiaires (equation of state) entre 0 et 50~GPa
+pour les deux ou trois candidats les plus proches du croisement.
+
+\subsection{Cas particulier : Pbam à 50~GPa converge en un seul pas ionique}
+
+Le calcul \texttt{Al4C3\_Pbam} (50~GPa) atteint le critère de convergence des forces dès le
+premier pas ionique (\texttt{OSZICAR} : \texttt{1 F= ...}), alors que \texttt{NSW=200} pas
+étaient autorisés. Ceci indique que la structure de départ (symétrisée par \texttt{findsym})
+était déjà très proche de l'équilibre mécanique sous cette pression — plausible pour une
+structure à haute symétrie où les positions de Wyckoff imposent des forces nulles par
+symétrie, ne laissant que le volume à ajuster. Ce point ne constitue pas une anomalie de
+calcul (le message \emph{"reached required accuracy"} et le récapitulatif de timing
+\emph{"General timing..."} confirment une terminaison normale), mais mérite d'être noté car il
+tranche avec les 9--26 pas ioniques observés pour les autres polymorphes.
+
+\subsection{Incidents rencontrés durant la campagne}
+\label{sec:incidents}
+
+\begin{itemize}
+  \item \textbf{Instabilité avec VASP 6.5.0} : plusieurs runs (\texttt{Al4C3\_anti-CaFe2O4},
+  \texttt{Al4C3\_Pnma\_0GPa}, \texttt{Al4C3\_Pnma-III\_0GPa}) ont nécessité une ou plusieurs
+  reprises sous le module \texttt{vasp/6.5.0} avant la migration vers \texttt{vasp.6.4.2}
+  (traces \texttt{vasp.log.attempt*\_v650} conservées). \texttt{Al4C3\_anti-CaFe2O4} a en
+  particulier connu 3 tentatives (\texttt{attempt1\_slow}, \texttt{attempt2\_timeout},
+  \texttt{attempt3\_v650}) avant de converger proprement.
+  \item \textbf{Dépassement de limite de temps SLURM} : \texttt{Al4C3\_Pnma\_0GPa} (limite de
+  12~h) a été interrompu à l'étape ionique 21/200, l'énergie étant toujours en train de
+  diminuer ($\Delta E = -1.8\times10^{-3}$~eV, cible \texttt{EDIFFG=-0.01}). Le calcul a été
+  relancé en repartant du \texttt{CONTCAR} de cette étape (et non depuis la structure de
+  départ), afin de ne pas perdre le travail déjà accompli ; la géométrie et le journal de
+  cette première tentative ont été archivés
+  (\texttt{CONTCAR.attempt1\_step21}, \texttt{vasp.log.attempt1\_timeout}).
+  \item \textbf{Benchmark de parallélisation} : réalisé en parallèle de la campagne
+  (\texttt{benchmarks/scf\_speed\_test/}) pour identifier une configuration
+  \texttt{NPAR}/\texttt{KPAR} plus efficace ; voir le rapport dédié pour le détail
+  (\texttt{benchmarks/scf\_speed\_test/report/benchmark\_report.pdf}).
+\end{itemize}
+
+\section{Travaux en cours}
+
+Au moment de la rédaction de ce rapport, trois relaxations à 0~GPa sont toujours actives sur
+le cluster :
+
+\begin{center}
+\begin{tabular}{llll}
+\toprule
+Job SLURM & Polymorphe & État & Temps écoulé \\
+\midrule
+58434 & Al4C3\_Pnma-VII\_0GPa      & RUNNING & $\sim$2~h \\
+58437 & Al4C3\_Pnma\_0GPa (restart) & RUNNING & $\sim$20~min \\
+58388 & Al4C3\_antiCaFe2O4\_0GPa    & RUNNING & $\sim$12~h \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Ces trois calculs, ainsi que les résultats déjà convergés listés en section~4, n'ont pas
+encore été intégrés au dépôt Git pour les runs encore actifs (commit \texttt{c01e177}) — ils
+seront ajoutés une fois convergés.
+
+\section{Prochaines étapes}
+
+\begin{enumerate}[label=(\roman*)]
+  \item Terminer les trois relaxations à 0~GPa en cours, pour disposer du classement de
+  stabilité complet à pression ambiante et confirmer (ou infirmer) que R-3m reste le
+  polymorphe le plus stable dans ce jeu de candidats.
+  \item Si le renversement R-3m~$\leftrightarrow$~Pbam/Pnma se confirme, affiner la
+  localisation de la pression de transition par des calculs à des pressions intermédiaires
+  (par exemple 10, 20, 30~GPa) pour les candidats les plus proches du croisement.
+  \item Exploiter les densités d'états déjà calculées (\texttt{DOSCAR}) pour caractériser le
+  caractère (métallique/isolant, contribution Al vs C) de chaque polymorphe.
+  \item Documenter la structure du dépôt dans le \texttt{README.md} (actuellement
+  \emph{"à définir au fil du projet"}) à mesure que la convention de nommage des dossiers se
+  stabilise.
+\end{enumerate}
+
+\appendix
+\section{Références du dépôt}
+
+Commit courant : \texttt{c01e177} (« Add Pnma-VII polymorph, converge remaining 0/50~GPa
+relaxations, add SCF speed benchmark »). Données brutes des relaxations dans
+\texttt{structures/Al4C3\_<polymorphe>[\_pression]/}, benchmark de parallélisation et son
+rapport dans \texttt{benchmarks/scf\_speed\_test/}.
+
+\end{document}
