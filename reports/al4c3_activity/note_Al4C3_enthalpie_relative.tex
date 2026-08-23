@@ -1,0 +1,144 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{booktabs}
+\usepackage{siunitx}
+\usepackage[table]{xcolor}
+\usepackage{hyperref}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{caption}
+\usepackage{enumitem}
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+\sisetup{detect-weight=true, detect-family=true}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!50!black,
+  urlcolor=blue!50!black,
+  citecolor=blue!50!black,
+  pdftitle={Note - Enthalpie relative Al4C3},
+  pdfauthor={Pr. John Akapulco}
+}
+
+\title{\vspace{-1.5cm}Note technique\\[2pt]
+\large Diagramme d'enthalpie relative $\Delta H(P)$ d'Al$_4$C$_3$ (référence Pnma-VII)}
+\author{Pr. John Akapulco \\ \small \href{mailto:computchem86@gmail.com}{computchem86@gmail.com}}
+\date{23 août 2026}
+
+\begin{document}
+\maketitle
+\vspace{-0.5cm}
+
+\begin{abstract}
+\noindent
+Cette note complète le rapport \texttt{rapport\_activite\_Al4C3\_HP\_scan.tex} (scan H(P)
+complet, 0--100~GPa, sept polymorphes) en présentant les mêmes résultats sous forme
+d'enthalpie \emph{relative} : $\Delta H(P) = H_{\text{phase}}(P) - H_{\text{Pnma-VII}}(P)$,
+exprimée en meV/atome, où \textbf{Pnma-VII} -- la phase la plus stable à 0~GPa -- sert de
+référence et reste fixée à $\Delta H = 0$ sur toute la gamme de pression. Cette normalisation
+rend les écarts de stabilité directement lisibles en meV/atome (l'unité usuelle pour comparer
+des polymorphes) et fait ressortir sans ambiguïté les deux croisements de stabilité déjà
+identifiés : Pnma-VII~$\to$~Pbam à 25.6~GPa, puis Pbam~$\to$~Pnma à 52.3~GPa.
+\end{abstract}
+
+\section{Construction du diagramme}
+
+Pour chaque polymorphe $i$ et chaque pression $P$ de la grille (0 à 100~GPa, pas de 10~GPa),
+on calcule
+\[
+\Delta H_i(P) = H_i(P) - H_{\text{Pnma-VII}}(P), \qquad
+\Delta H_i(P)\ \text{en meV/atome} = \frac{\Delta H_i(P)\ [\text{eV/f.u.}]}{7}\times 1000,
+\]
+avec 7 atomes par formule unitaire (Al$_4$C$_3$ = 4~Al + 3~C). Le choix de Pnma-VII comme
+référence n'est pas arbitraire : c'est la phase de plus basse enthalpie à 0~GPa dans les sept
+candidats étudiés (voir tableau~\ref{tab:rank0}). Soustraire la même courbe $H_{\text{ref}}(P)$
+à chaque phase ne déplace aucun des croisements identifiés dans le rapport précédent -- ces
+croisements dépendent uniquement de la différence entre deux courbes, invariante par un
+changement de référence commun.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{clS[table-format=-2.4]}
+\toprule
+Rang & Polymorphe & {$H$/f.u. à 0~GPa (eV)} \\
+\midrule
+1 & Pnma-VII (référence) & -43.3535 \\
+2 & R-3m               & -43.3294 \\
+3 & Pnma-III           & -42.3599 \\
+4 & Pbam               & -42.2257 \\
+5 & Pnma               & -41.5961 \\
+6 & anti-CaFe$_2$O$_4$ & -41.5023 \\
+7 & I-43d              & -40.2317 \\
+\bottomrule
+\end{tabular}
+\caption{Classement à 0~GPa (jeu complet, 7/7 convergés). Pnma-VII devance R-3m de seulement
+0.024~eV/f.u. ($\approx$3.4~meV/atome) et sert de référence pour le diagramme relatif.}
+\label{tab:rank0}
+\end{table}
+
+\section{Diagramme d'enthalpie relative}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=\textwidth, height=8.5cm,
+  xlabel={Pression (GPa)},
+  ylabel={$\Delta H$/atome (meV), réf. Pnma-VII},
+  legend pos=outer north east,
+  legend style={font=\small},
+  grid=major,
+  extra y ticks={0},
+  extra y tick style={grid style={solid, black!40}},
+]
+\addplot table[x=P_GPa,y=dH_meV_per_atom] {../../hp_curves/hp_rel_Pnma-VII.dat};
+\addplot table[x=P_GPa,y=dH_meV_per_atom] {../../hp_curves/hp_rel_R-3m.dat};
+\addplot table[x=P_GPa,y=dH_meV_per_atom] {../../hp_curves/hp_rel_Pbam.dat};
+\addplot table[x=P_GPa,y=dH_meV_per_atom] {../../hp_curves/hp_rel_Pnma-III.dat};
+\addplot table[x=P_GPa,y=dH_meV_per_atom] {../../hp_curves/hp_rel_Pnma.dat};
+\addplot table[x=P_GPa,y=dH_meV_per_atom] {../../hp_curves/hp_rel_anti-CaFe2O4.dat};
+\addplot table[x=P_GPa,y=dH_meV_per_atom] {../../hp_curves/hp_rel_I-43d.dat};
+\legend{Pnma-VII (réf.), R-3m, Pbam, Pnma-III, Pnma, anti-CaFe2O4, I-43d}
+\end{axis}
+\end{tikzpicture}
+\caption{Enthalpie relative $\Delta H(P) = H_{\text{phase}}(P) - H_{\text{Pnma-VII}}(P)$, en
+meV/atome. La phase de référence est la droite $\Delta H = 0$ ; toute courbe qui passe sous
+zéro devient, à cette pression, plus stable que Pnma-VII. R-3m longe la référence de très près
+sur 0--20~GPa ($\Delta H < 6$~meV/atome) sans jamais passer sous zéro. Pbam et Pnma-III
+franchissent zéro vers 25--26~GPa ; Pnma devient la courbe la plus basse au-delà de 52~GPa.}
+\label{fig:hprel}
+\end{figure}
+
+\section{Lecture du diagramme}
+
+\begin{itemize}
+  \item \textbf{0--20~GPa} : toutes les courbes restent au-dessus de zéro sauf la référence
+  elle-même ; R-3m est la plus proche ($\Delta H \in [3, 6]$~meV/atome), les autres phases sont
+  nettement plus hautes (Pbam, Pnma-III $\approx$ 130--160~meV/atome ; I-43d $>$ 400~meV/atome).
+  \item \textbf{$\approx$25.6~GPa} : Pbam et Pnma-III croisent $\Delta H = 0$ quasi simultanément
+  (Pnma-VII cesse d'être la phase de plus basse enthalpie).
+  \item \textbf{25--52~GPa} : Pbam (puis Pnma-III, très proche) devient négatif et le reste,
+  signalant sa domination sur Pnma-VII dans cette gamme.
+  \item \textbf{$\approx$52.3~GPa} : Pnma croise Pbam/Pnma-III et devient la courbe la plus
+  basse pour le reste de la gamme étudiée (jusqu'à 100~GPa).
+  \item \textbf{I-43d} reste la courbe la plus haute sur toute la gamme, mais son $\Delta H$
+  décroît fortement avec la pression (de $+3.12$~eV/f.u. à 0~GPa à $+132$~meV/atome à
+  100~GPa), signe d'une convergence progressive des enthalpies sous forte compression.
+\end{itemize}
+
+\appendix
+\section{Références}
+
+Données sources : \texttt{hp\_curves/results\_hp.csv} (commit \texttt{470e557}, campagne HP
+scan 0--100~GPa). Fichiers de données relatifs générés pour cette note :
+\texttt{hp\_curves/hp\_rel\_<polymorphe>.dat} (colonnes \texttt{P\_GPa},
+\texttt{dH\_meV\_per\_atom}). Voir \texttt{rapport\_activite\_Al4C3\_HP\_scan.tex} pour la
+méthodologie DFT complète et le diagramme en enthalpie absolue.
+
+\end{document}
