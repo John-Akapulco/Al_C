@@ -57,7 +57,8 @@ pour les sept polymorphes, soit 77 relaxations sous contrainte (\texttt{ISIF=8},
 électronique. Les 77 calculs ont convergé. Le diagramme de stabilité obtenu révèle trois
 domaines successifs : \textbf{Pnma-VII} (0--26~GPa, quasi dégénéré avec R-3m en dessous de
 20~GPa), \textbf{Pbam} (26--52~GPa) et \textbf{Pnma} (52--100~GPa), avec des pressions de
-transition interpolées à \textbf{25.6~GPa} et \textbf{52.3~GPa}. Le polymorphe \textbf{I-43d}
+transition estimées à \textbf{26~GPa} et \textbf{52~GPa} (arrondies à l'unité de GPa ; voir
+section~\ref{sec:precision} pour la justification). Le polymorphe \textbf{I-43d}
 reste le moins stable sur toute la gamme mais converge rapidement vers les autres phases à
 haute pression. Cette version ajoute les diagrammes $V(P)$ et $E(P)$ (avant celui de $H(P)$)
 ainsi que le tableau numérique complet (énergie, volume, enthalpie par formule unitaire, au
@@ -250,9 +251,9 @@ volume $V$ et l'enthalpie $H$ par formule unitaire, arrondis au millième (eV po
 Domaine de pression & Phase la plus stable & Remarque \\
 \midrule
 0--20~GPa   & Pnma-VII & quasi dégénéré avec R-3m ($\Delta H < 0.060$~eV/f.u.) \\
-20--30~GPa  & transition Pnma-VII~$\to$~Pbam & croisement interpolé à \textbf{25.6~GPa} \\
+20--30~GPa  & transition Pnma-VII~$\to$~Pbam & croisement interpolé à \textbf{26~GPa} \\
 30--50~GPa  & Pbam & Pnma-III très proche ($\Delta H = 0.052$~eV/f.u. à 50~GPa) \\
-50--60~GPa  & transition Pbam~$\to$~Pnma & croisement interpolé à \textbf{52.3~GPa} \\
+50--60~GPa  & transition Pbam~$\to$~Pnma & croisement interpolé à \textbf{52~GPa} \\
 60--100~GPa & Pnma & écart croissant avec les autres phases \\
 \bottomrule
 \end{tabular}
@@ -260,7 +261,9 @@ Domaine de pression & Phase la plus stable & Remarque \\
 
 Les pressions de transition sont obtenues par interpolation linéaire de $H(P)$ entre les deux
 points de grille encadrant le croisement des enveloppes ($20$/$30$~GPa et $50$/$60$~GPa
-respectivement).
+respectivement), ce qui donne brut 25.6~GPa et 52.3~GPa. Ces valeurs sont arrondies à l'unité de
+GPa dans tout ce rapport : la décimale n'est pas significative au regard de la précision réelle
+sur l'enthalpie (voir section~\ref{sec:precision}).
 
 I-43d demeure le polymorphe le moins stable sur toute la gamme étudiée
 ($\Delta H = +3.122$~eV/f.u. à 0~GPa par rapport à Pnma-VII), mais son écart avec la phase la
@@ -281,29 +284,62 @@ plus stable des sept candidats sur la grille étudiée -- Pnma-VII le devance de
 « domination » de R-3m relevée dans le rapport précédent provenait du jeu de données alors
 partiel à 0~GPa, dans lequel Pnma-VII n'avait pas encore convergé. Le renversement
 Pbam~$\to$~Pnma vers 50~GPa, en revanche, se confirme et se précise : il s'agit en fait de deux
-transitions successives (Pnma-VII~$\to$~Pbam à 25.6~GPa, puis Pbam~$\to$~Pnma à 52.3~GPa) et
+transitions successives (Pnma-VII~$\to$~Pbam à 26~GPa, puis Pbam~$\to$~Pnma à 52~GPa) et
 non d'une transition unique R-3m~$\to$~Pbam/Pnma.
 
-\subsection{Robustesse du classement}
+\subsection{Précision des pressions de transition}
+\label{sec:precision}
 
 Les écarts d'enthalpie entre phases concurrentes autour des deux transitions restent modestes
 (quelques dizaines à environ une centaine de meV/f.u.), en particulier entre Pbam et Pnma-III
 sur toute la plage 30--90~GPa ($\Delta H < 0.113$~eV/f.u.). Le maillage de
-$\mathbf{k}$-points allégé
-(\texttt{KSPACING=0.2}) utilisé pour ce scan exploratoire, plus grossier que celui de la
-campagne 0/50~GPa (\texttt{KSPACING=0.03}), pourrait introduire une incertitude numérique du
-même ordre de grandeur que ces écarts. Les pressions de transition rapportées ici sont donc à
-considérer comme des estimations de premier ordre ; une confirmation avec le maillage fin de la
-campagne précédente serait nécessaire avant de les considérer comme définitives, en particulier
-pour la transition Pbam~$\leftrightarrow$~Pnma-III qui reste quasi dégénérée sur une large
-plage.
+$\mathbf{k}$-points allégé (\texttt{KSPACING=0.2}) utilisé pour ce scan exploratoire, plus
+grossier que celui de la campagne 0/50~GPa (\texttt{KSPACING=0.03}), introduit une incertitude
+numérique dont l'ordre de grandeur n'est pas mesuré directement ici, mais qui est vraisemblablement
+supérieure au meV/atome.
+
+Pour quantifier l'effet d'une telle incertitude sur la pression de transition elle-même, on
+utilise la relation thermodynamique $dH/dP = V$ : au voisinage d'un croisement $P_t$ entre deux
+phases, $\Delta H(P) = H_1(P) - H_2(P)$ a pour pente $d(\Delta H)/dP = \Delta V(P_t)$, le volume
+relatif des deux phases à la transition. Une incertitude $\delta H$ sur chaque enthalpie se
+propage donc en
+\[
+\delta P_t \approx \frac{\sqrt{2}\,\delta H}{|\Delta V(P_t)|},
+\]
+(facteur $\sqrt2$ pour des erreurs indépendantes sur les deux phases). Plus les deux phases en
+compétition ont des volumes proches, plus la transition est sensible à l'incertitude sur $H$.
+
+Appliqué aux deux transitions de ce scan, avec $\delta H = 1$~meV/atome (borne optimiste) :
+
+\begin{center}
+\begin{tabular}{lccc}
+\toprule
+Transition & $\Delta V(P_t)$ (\AA$^3$/atome) & Pente $d(\Delta H)/dP$ & $\delta P_t$ \\
+\midrule
+Pnma-VII~$\to$~Pbam (26~GPa) & 0.917 & 5.73~meV/(atome$\cdot$GPa) & $\approx$0.25~GPa \\
+Pbam~$\to$~Pnma (52~GPa)     & 0.267 & 1.67~meV/(atome$\cdot$GPa) & $\approx$0.85~GPa \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Ces deux valeurs sont des \emph{bornes optimistes} (elles supposent une précision d'enthalpie de
+1~meV/atome, meilleure que ce que garantit \texttt{KSPACING=0.2}). Dans les deux cas, une
+décimale sur la pression de transition n'est pas justifiée : \textbf{26~GPa} et \textbf{52~GPa}
+(valeurs arrondies à l'unité de GPa) sont donc les seules pressions rapportées dans ce document.
+La seconde transition est structurellement moins bien déterminée que la première -- son
+$\Delta V$ est 3.4$\times$ plus petit, ce qui explique aussi la quasi-dégénérescence Pbam/Pnma-III
+relevée ci-dessus (leur $\Delta V$ tombe même sous 0.03~\AA$^3$/atome au-delà de 70~GPa, rendant
+tout ordre de stabilité entre elles non significatif à ce niveau de maillage). Une confirmation
+avec le maillage fin de la campagne précédente (\texttt{KSPACING=0.03}) serait nécessaire avant
+de considérer ces pressions comme définitives, en particulier pour la seconde transition.
 
 \section{Prochaines étapes}
 
 \begin{enumerate}[label=(\roman*)]
   \item Reconverger les points de pression proches des deux transitions identifiées
   (20--30~GPa et 50--60~GPa) avec le maillage fin (\texttt{KSPACING=0.03}) de la campagne
-  précédente, pour confirmer les pressions de transition à 25.6 et 52.3~GPa.
+  précédente, pour confirmer les pressions de transition à 26 et 52~GPa (voir
+  section~\ref{sec:precision} pour l'analyse de précision qui justifie cet arrondi).
   \item Resserrer la grille de pression autour de ces deux transitions (pas de 2--5~GPa) pour
   réduire l'incertitude sur leur localisation.
   \item Calculer les phonons des trois phases dominantes (Pnma-VII, Pbam, Pnma) à leurs

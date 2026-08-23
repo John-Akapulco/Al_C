@@ -76,3 +76,14 @@ anti-CaFe2O4	70	60	-
 anti-CaFe2O4	80	70	-
 anti-CaFe2O4	90	80	-
 anti-CaFe2O4	100	90	-
+Fd-3m	0	-	findsym-output (user-supplied)
+Fd-3m	10	0	-
+Fd-3m	20	10	-
+Fd-3m	30	20	-
+Fd-3m	40	30	-
+Fd-3m	50	40	-
+Fd-3m	60	50	-
+Fd-3m	70	60	-
+Fd-3m	80	70	-
+Fd-3m	90	80	-
+Fd-3m	100	90	-
