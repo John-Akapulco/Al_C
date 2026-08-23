@@ -1,0 +1,207 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{booktabs}
+\usepackage{siunitx}
+\usepackage[table]{xcolor}
+\usepackage{hyperref}
+\usepackage{longtable}
+\usepackage{pgfplots}
+\pgfplotsset{
+  compat=1.18,
+  every axis legend/.append style={
+    at={(0.5,0.98)}, anchor=north,
+    legend columns=4,
+    font=\scriptsize,
+    fill=white, fill opacity=0.85, draw opacity=1, text opacity=1,
+    draw=black!20,
+    /tikz/every even column/.append style={column sep=6pt},
+  },
+}
+\usepackage{caption}
+\usepackage{enumitem}
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+\sisetup{detect-weight=true, detect-family=true}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!50!black,
+  urlcolor=blue!50!black,
+  citecolor=blue!50!black,
+  pdftitle={Rapport d'activite - Scan H(P) r2SCAN Al4C3 (partiel)},
+  pdfauthor={Pr. John Akapulco}
+}
+
+\title{\vspace{-1.5cm}Rapport d'activité\\[2pt]
+\large Diagramme de stabilité H(P) r2SCAN des polymorphes d'Al$_4$C$_3$\\[2pt]
+\normalsize (résultats partiels, référence R-3m)}
+\author{Pr. John Akapulco \\ \small \href{mailto:computchem86@gmail.com}{computchem86@gmail.com}}
+\date{23 août 2026}
+
+\begin{document}
+\maketitle
+\vspace{-0.5cm}
+
+\begin{abstract}
+\noindent
+Ce rapport présente l'état d'avancement du scan H(P) r2SCAN (huit polymorphes, grille 0 à
+100~GPa par pas de 10~GPa, méthodologie décrite dans
+\texttt{rapport\_activite\_Al4C3\_PBE\_vs\_r2SCAN.tex}) au 23~août~2026 (soir) :
+\textbf{66 points convergés sur 88}. Cinq polymorphes sont complets (Fd-3m, Pnma-VII,
+Pnma-III, Pnma, R-3m) ; trois sont encore en cours -- \textbf{Pbam} (6/11), \textbf{I-43d}
+(4/11, chaîne relancée à P40 après un plantage numérique, job SLURM 58469) et
+\textbf{anti-CaFe$_2$O$_4$} (1/11, job SLURM 58468). Les diagrammes $V(P)$, $E(P)$ et $H(P)$
+ci-dessous n'incluent donc que les points déjà convergés ; les courbes des trois polymorphes
+incomplets s'arrêtent à la dernière pression atteinte. Le diagramme d'enthalpie est présenté en
+valeur \emph{relative}, $\Delta H(P) = H_{\text{phase}}(P) - H_{\text{R-3m}}(P)$, avec
+\textbf{R-3m} comme référence (même convention que
+\texttt{note\_Al4C3\_enthalpie\_relative\_v2.tex} pour le jeu PBE), R-3m étant complet sur toute
+la gamme et servant donc de référence commune fiable même pour les polymorphes partiellement
+convergés.
+\end{abstract}
+
+\section{État de convergence}
+
+\begin{center}
+\begin{tabular}{lc}
+\toprule
+Polymorphe & Points convergés (0--100~GPa) \\
+\midrule
+Fd-3m              & 11/11 \\
+Pnma-VII           & 11/11 \\
+Pnma-III           & 11/11 \\
+Pnma               & 11/11 \\
+R-3m               & 11/11 \\
+Pbam               & 6/11 (0--50~GPa) \\
+I-43d              & 4/11 (0--30~GPa) \\
+anti-CaFe$_2$O$_4$ & 1/11 (0~GPa) \\
+\midrule
+\textbf{Total} & \textbf{66/88} \\
+\bottomrule
+\end{tabular}
+\label{tab:r2scan_conv}
+\end{center}
+
+Convergence = critère de forces \texttt{EDIFFG=-0.01}~eV/\AA\ atteint (\emph{"reached required
+accuracy"} dans l'\texttt{OUTCAR}). Pbam et anti-CaFe$_2$O$_4$ tournent normalement (jobs SLURM
+58467/58468). La chaîne I-43d avait planté à P40 (\texttt{Error EDDDAV: Call to ZHEGV failed},
+instabilité numérique de la diagonalisation itérative, sans lien avec la qualité de la seed
+PBE) ; elle a été nettoyée et relancée de P40 à P100 (job 58469).
+
+\section{Diagramme de volume V(P)}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=\textwidth, height=8cm,
+  xlabel={Pression (GPa)},
+  ylabel={$V$/formule (\AA$^3$)},
+  enlarge y limits={upper=0.22, lower=0.02},
+  grid=major,
+]
+\addplot table[x=P_GPa,y=V_A3_per_fu] {../../hp_curves_r2SCAN/hp_V_Pnma-VII.dat};
+\addplot table[x=P_GPa,y=V_A3_per_fu] {../../hp_curves_r2SCAN/hp_V_Pbam.dat};
+\addplot table[x=P_GPa,y=V_A3_per_fu] {../../hp_curves_r2SCAN/hp_V_Pnma.dat};
+\addplot table[x=P_GPa,y=V_A3_per_fu] {../../hp_curves_r2SCAN/hp_V_R-3m.dat};
+\addplot table[x=P_GPa,y=V_A3_per_fu] {../../hp_curves_r2SCAN/hp_V_Pnma-III.dat};
+\addplot table[x=P_GPa,y=V_A3_per_fu] {../../hp_curves_r2SCAN/hp_V_anti-CaFe2O4.dat};
+\addplot table[x=P_GPa,y=V_A3_per_fu] {../../hp_curves_r2SCAN/hp_V_I-43d.dat};
+\addplot table[x=P_GPa,y=V_A3_per_fu] {../../hp_curves_r2SCAN/hp_V_Fd-3m.dat};
+\legend{Pnma-VII, Pbam, Pnma, R-3m, Pnma-III, anti-CaFe2O4, I-43d, Fd-3m}
+\end{axis}
+\end{tikzpicture}
+\caption{Volume de la maille par formule unitaire (Al$_4$C$_3$), r2SCAN, en fonction de la
+pression. Les courbes Pbam, I-43d et anti-CaFe$_2$O$_4$ s'arrêtent à leur dernier point
+convergé (respectivement 50, 30 et 0~GPa) -- scan encore en cours pour ces trois polymorphes.}
+\label{fig:vp_r2scan}
+\end{figure}
+
+\section{Diagramme d'énergie totale E(P)}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=\textwidth, height=8cm,
+  xlabel={Pression (GPa)},
+  ylabel={$E$/formule (eV)},
+  enlarge y limits={upper=0.22, lower=0.02},
+  grid=major,
+]
+\addplot table[x=P_GPa,y=E_eV_per_fu] {../../hp_curves_r2SCAN/hp_E_Pnma-VII.dat};
+\addplot table[x=P_GPa,y=E_eV_per_fu] {../../hp_curves_r2SCAN/hp_E_Pbam.dat};
+\addplot table[x=P_GPa,y=E_eV_per_fu] {../../hp_curves_r2SCAN/hp_E_Pnma.dat};
+\addplot table[x=P_GPa,y=E_eV_per_fu] {../../hp_curves_r2SCAN/hp_E_R-3m.dat};
+\addplot table[x=P_GPa,y=E_eV_per_fu] {../../hp_curves_r2SCAN/hp_E_Pnma-III.dat};
+\addplot table[x=P_GPa,y=E_eV_per_fu] {../../hp_curves_r2SCAN/hp_E_anti-CaFe2O4.dat};
+\addplot table[x=P_GPa,y=E_eV_per_fu] {../../hp_curves_r2SCAN/hp_E_I-43d.dat};
+\addplot table[x=P_GPa,y=E_eV_per_fu] {../../hp_curves_r2SCAN/hp_E_Fd-3m.dat};
+\legend{Pnma-VII, Pbam, Pnma, R-3m, Pnma-III, anti-CaFe2O4, I-43d, Fd-3m}
+\end{axis}
+\end{tikzpicture}
+\caption{Énergie totale (sans le terme $PV$) par formule unitaire (Al$_4$C$_3$), r2SCAN, en
+fonction de la pression, mêmes points convergés que la figure~\ref{fig:vp_r2scan}.}
+\label{fig:ep_r2scan}
+\end{figure}
+
+\section{Diagramme d'enthalpie relative $\Delta H(P)$, référence R-3m}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=\textwidth, height=8.5cm,
+  xlabel={Pression (GPa)},
+  ylabel={$\Delta H$/atome (meV), réf. R-3m},
+  enlarge y limits={upper=0.22, lower=0.02},
+  grid=major,
+  extra y ticks={0},
+  extra y tick style={grid style={solid, black!40}},
+]
+\addplot table[x=P_GPa,y=dH_meV_per_atom] {../../hp_curves_r2SCAN/hp_rel_R-3m.dat};
+\addplot table[x=P_GPa,y=dH_meV_per_atom] {../../hp_curves_r2SCAN/hp_rel_Pnma-VII.dat};
+\addplot table[x=P_GPa,y=dH_meV_per_atom] {../../hp_curves_r2SCAN/hp_rel_Fd-3m.dat};
+\addplot table[x=P_GPa,y=dH_meV_per_atom] {../../hp_curves_r2SCAN/hp_rel_Pbam.dat};
+\addplot table[x=P_GPa,y=dH_meV_per_atom] {../../hp_curves_r2SCAN/hp_rel_Pnma-III.dat};
+\addplot table[x=P_GPa,y=dH_meV_per_atom] {../../hp_curves_r2SCAN/hp_rel_Pnma.dat};
+\addplot table[x=P_GPa,y=dH_meV_per_atom] {../../hp_curves_r2SCAN/hp_rel_anti-CaFe2O4.dat};
+\addplot table[x=P_GPa,y=dH_meV_per_atom] {../../hp_curves_r2SCAN/hp_rel_I-43d.dat};
+\legend{R-3m (réf.), Pnma-VII, Fd-3m, Pbam, Pnma-III, Pnma, anti-CaFe2O4, I-43d}
+\end{axis}
+\end{tikzpicture}
+\caption{Enthalpie relative $\Delta H(P) = H_{\text{phase}}(P) - H_{\text{R-3m}}(P)$, r2SCAN, en
+meV/atome. R-3m est la droite $\Delta H = 0$. anti-CaFe$_2$O$_4$ n'a qu'un point (0~GPa) ; Pbam
+et I-43d s'arrêtent respectivement à 50 et 30~GPa. Comme pour le jeu PBE
+(\texttt{note\_Al4C3\_enthalpie\_relative\_v2.tex}), Pnma-VII reste sous zéro et Fd-3m la
+rejoint sous zéro à basse pression ; les autres phases démarrent au-dessus de zéro à 0~GPa.}
+\label{fig:hp_rel_r2scan}
+\end{figure}
+
+\section{Valeurs numériques (E, V, H) -- points convergés à ce jour}
+
+Le tableau~\ref{tab:hp_r2scan_full} rassemble, pour les 66 points convergés, l'énergie totale
+$E$, le volume $V$ et l'enthalpie $H$ par formule unitaire (r2SCAN), arrondis au millième.
+
+\input{table_hp_r2scan_full.tex}
+
+\appendix
+\section{Références du dépôt}
+
+Données brutes dans \texttt{hp\_curves\_r2SCAN/Al4C3\_<polymorphe>/P<pression>/}, extraction via
+\texttt{hp\_curves\_r2SCAN/extract\_hp.py} (\texttt{results\_hp.csv},
+\texttt{hp\_<polymorphe>.dat} (H), \texttt{hp\_E\_<polymorphe>.dat} (E),
+\texttt{hp\_V\_<polymorphe>.dat} (V)). Fichiers relatifs (référence R-3m, meV/atome) :
+\texttt{hp\_curves\_r2SCAN/hp\_rel\_<polymorphe>.dat}. Tableau complet (section~5) dans
+\texttt{table\_hp\_r2scan\_full.tex} / \texttt{table\_hp\_r2scan\_full\_body.tex}. Chaîne I-43d
+relancée : \texttt{hp\_curves\_r2SCAN/Al4C3\_I-43d/run\_chain\_resume\_P40.sh} (job SLURM
+58469). Voir \texttt{rapport\_activite\_Al4C3\_HP\_scan.tex} pour le scan PBE complet et
+\texttt{rapport\_activite\_Al4C3\_PBE\_vs\_r2SCAN.tex} pour la méthodologie DFT r2SCAN
+(seed PBE, \texttt{METAGGA=R2scan}, etc.).
+
+\end{document}
