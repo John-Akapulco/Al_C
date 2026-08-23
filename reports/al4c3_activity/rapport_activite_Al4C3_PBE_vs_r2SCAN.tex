@@ -45,10 +45,15 @@ amorcé depuis le \texttt{WAVECAR}/\texttt{CHGCAR} PBE déjà convergé à la m�
 recommandée par VASP pour les meta-GGA). Ce document liste, pour chacun des sept polymorphes
 convergés en PBE, la structure d'entrée (\texttt{POSCAR}, identique à 0 et 50~GPa entre PBE et
 r2SCAN) et le maillage de points $\mathbf{k}$ généré par \texttt{KSPACING=0.2} à ces deux
-pressions. Il ne contient \emph{pas encore} les résultats r2SCAN eux-mêmes (H(P), classement de
-stabilité) : les chaînes de calcul viennent d'être soumises (voir section~\ref{sec:status}) et
-ce rapport sera complété d'une comparaison quantitative PBE/r2SCAN une fois les points
-convergés.
+pressions.
+
+Le scan PBE de \textbf{Fd-3m} (0--100~GPa) et sa chaîne r2SCAN correspondante sont désormais
+tous deux intégralement convergés (11/11 points chacun) ; la
+section~\ref{sec:fd3m-comparison} en tire une première comparaison quantitative PBE/r2SCAN
+(volume d'équilibre et courbe $V(P)$). Les sept autres polymorphes sont en cours de traitement
+r2SCAN (42/88 points au total convergés à ce stade, voir section~\ref{sec:status}) ; la
+comparaison des pressions de transition (26 et 52~GPa en PBE) sera ajoutée une fois leurs
+chaînes achevées.
 \end{abstract}
 
 \section{Contexte et objectifs}
@@ -152,37 +157,89 @@ quels comme \texttt{POSCAR} d'entrée des calculs r2SCAN correspondants
 
 \input{poscar_listing_body.tex}
 
-\section{État de la campagne}
-\label{sec:status}
+\section{Comparaison quantitative PBE vs r2SCAN --- Fd-3m}
+\label{sec:fd3m-comparison}
+
+Fd-3m est à ce jour le seul polymorphe pour lequel les 11 points (0--100~GPa) sont convergés
+\emph{à la fois} en PBE et en r2SCAN, ce qui permet une première comparaison quantitative. Le
+tableau ci-dessous liste le volume par unité formulaire $V(P)$ dans les deux fonctionnelles et
+l'écart relatif $\Delta V/V_{\text{PBE}}$.
 
 \begin{center}
-\begin{tabular}{p{4.3cm}p{2.4cm}p{4cm}p{3cm}}
+\begin{tabular}{cccc}
 \toprule
-Polymorphe & Points préparés & Amorçage & État \\
+$P$ (GPa) & $V_{\text{PBE}}$ (\AA$^3$/f.u.) & $V_{\text{r2SCAN}}$ (\AA$^3$/f.u.) & $\Delta V/V_{\text{PBE}}$ \\
 \midrule
-Pnma-VII, Pbam, Pnma, R-3m, Pnma-III, anti-CaFe$_2$O$_4$, I-43d
-  & 11/11 (0--100~GPa) & WAVECAR PBE, même pression & fichiers prêts, non soumis \\
-Fd-3m
-  & 11/11 (0--100~GPa) & WAVECAR PBE à $P=0$ seulement, chaîne ascendante ensuite
-  & \textbf{soumis} (job SLURM 58461) \\
+0   & 79.353 & 77.913 & $-1.81\%$ \\
+10  & 75.109 & 74.000 & $-1.48\%$ \\
+20  & 71.764 & 70.865 & $-1.25\%$ \\
+30  & 69.005 & 68.251 & $-1.09\%$ \\
+40  & 66.656 & 66.014 & $-0.96\%$ \\
+50  & 64.619 & 64.062 & $-0.86\%$ \\
+60  & 62.820 & 62.333 & $-0.78\%$ \\
+70  & 61.214 & 60.784 & $-0.70\%$ \\
+80  & 59.763 & 59.381 & $-0.64\%$ \\
+90  & 58.443 & 58.101 & $-0.58\%$ \\
+100 & 57.233 & 56.925 & $-0.54\%$ \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-Les fichiers des sept premiers polymorphes sont générés dans \texttt{hp\_curves\_r2SCAN/}
-(\texttt{gen\_hp\_runs\_r2scan.py}) mais pas encore soumis à SLURM. La chaîne Fd-3m a été
-soumise séparément (\texttt{gen\_hp\_run\_fd3m\_r2scan.py}), le point $P=0$ étant le seul à
-disposer d'un \texttt{WAVECAR} PBE convergé au moment du lancement (le scan PBE de Fd-3m,
-lancé en chaîne ascendante unique lui aussi, est toujours en cours -- job SLURM 58460).
+r2SCAN prédit un volume systématiquement plus faible que PBE à toute pression, avec un écart qui
+décroît de $-1.81\%$ à $P=0$ à $-0.54\%$ à 100~GPa. Ceci confirme, pour ce polymorphe, le biais
+attendu de PBE (sur-estimation des volumes d'équilibre) et sa correction partielle par r2SCAN ;
+l'écart se referme sous compression car la maille est déjà fortement contractée et les deux
+fonctionnelles convergent vers une réponse élastique proche à haute densité. Les énergies
+totales et enthalpies $E(P)$, $H(P)$ ne sont pas directement comparables en valeur absolue entre
+PBE et r2SCAN (référence de l'énergie totale différente d'une fonctionnelle à l'autre) ; seule
+une comparaison des \emph{différences d'enthalpie entre polymorphes}, à fonctionnelle fixée,
+sera pertinente pour statuer sur les pressions de transition -- elle nécessite que tous les
+polymorphes soient convergés en r2SCAN (section~\ref{sec:status}).
+
+\section{État de la campagne}
+\label{sec:status}
+
+\begin{center}
+\begin{tabular}{p{3.2cm}p{2.2cm}p{5.5cm}p{2.8cm}}
+\toprule
+Polymorphe & Points convergés & Détail & Job SLURM \\
+\midrule
+Fd-3m      & \textbf{11/11} & \textbf{terminé} & 58461 (achevé) \\
+Pnma-III   & \textbf{11/11} & \textbf{terminé} & 58463 (achevé) \\
+Pnma       & 10/11 & P100 en cours & 58464 (en cours) \\
+Pnma-VII   & 6/11  & P0--P50 convergés, P70--P100 restants & 58465 (en cours) \\
+I-43d      & 4/11  & \textbf{chaîne arrêtée} : P40 a échoué ($\texttt{MPI\_Abort}$, avertissements répétés
+  \og Sub-Space-Matrix is not hermitian \fg{} avant crash) ; P50--P100 non lancés &
+  58462 (mort, non relancé) \\
+Pbam       & 0/11 & en file d'attente SLURM (priorité) & 58467 (PD) \\
+R-3m       & 0/11 & en file d'attente SLURM (ressources) & 58466 (PD) \\
+anti-CaFe$_2$O$_4$ & 0/11 & en file d'attente SLURM (priorité) & 58468 (PD) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Soit 42/88 points de la grille r2SCAN convergés à ce stade
+(\texttt{hp\_curves\_r2SCAN/results\_hp.csv}). Les sept chaînes restantes ont été soumises via
+\texttt{hp\_curves\_r2SCAN/submit\_chain.sh} (un job SLURM par polymorphe, chaîne ascendante de
+11 points sur un seul nœud) ; Fd-3m avait été lancée séparément
+(\texttt{gen\_hp\_run\_fd3m\_r2scan.py}), le point $P=0$ étant le seul à disposer d'un
+\texttt{WAVECAR} PBE convergé au moment du lancement.
+
+La chaîne \textbf{I-43d} nécessite une intervention manuelle avant de pouvoir reprendre : le
+point P40 s'est arrêté après \SI{787}{\second} de calcul suite à un \texttt{MPI\_Abort}, précédé
+de nombreux avertissements \og Sub-Space-Matrix is not hermitian \fg{} dans le solveur Davidson
+-- signature typique d'une instabilité numérique meta-GGA plutôt que d'un défaut physique de la
+structure. Un redémarrage depuis P30 avec un réglage \texttt{ALGO} plus conservateur (p.\,ex.\
+\texttt{Normal} au lieu de la valeur par défaut) est la piste à tester en premier.
 
 \section{Prochaines étapes}
 
 \begin{enumerate}[label=(\roman*)]
-  \item Soumettre les sept chaînes r2SCAN restantes (\texttt{hp\_curves\_r2SCAN/submit\_chain.sh}),
-  après revue.
-  \item Une fois les points r2SCAN convergés, extraire $E$, $V$, $H$
-  (\texttt{hp\_curves\_r2SCAN/extract\_hp.py}, même format que le scan PBE) et construire les
-  diagrammes $V(P)$, $E(P)$, $H(P)$ r2SCAN, superposés aux courbes PBE du rapport principal.
+  \item Diagnostiquer et relancer la chaîne I-43d à partir de P40 (voir ci-dessus).
+  \item Laisser les chaînes Pnma, Pnma-VII, Pbam, R-3m et anti-CaFe$_2$O$_4$ achever leurs
+  points restants.
+  \item Une fois tous les polymorphes convergés, construire les diagrammes $V(P)$, $E(P)$,
+  $H(P)$ r2SCAN complets, superposés aux courbes PBE du rapport principal.
   \item Comparer les pressions de transition PBE (26 et 52~GPa) aux valeurs r2SCAN
   correspondantes, avec la même analyse de précision ($\delta P_t \approx \sqrt2\,\delta H /
   |\Delta V(P_t)|$) que dans le rapport principal.
