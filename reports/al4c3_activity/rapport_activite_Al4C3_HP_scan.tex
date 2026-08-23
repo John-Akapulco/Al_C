@@ -8,8 +8,19 @@
 \usepackage{siunitx}
 \usepackage[table]{xcolor}
 \usepackage{hyperref}
+\usepackage{longtable}
 \usepackage{pgfplots}
-\pgfplotsset{compat=1.18}
+\pgfplotsset{
+  compat=1.18,
+  every axis legend/.append style={
+    at={(0.5,0.98)}, anchor=north,
+    legend columns=4,
+    font=\scriptsize,
+    fill=white, fill opacity=0.85, draw opacity=1, text opacity=1,
+    draw=black!20,
+    /tikz/every even column/.append style={column sep=6pt},
+  },
+}
 \usepackage{caption}
 \usepackage{enumitem}
 \usepackage{amsmath}
@@ -48,7 +59,9 @@ domaines successifs : \textbf{Pnma-VII} (0--26~GPa, quasi dégénéré avec R-3m
 20~GPa), \textbf{Pbam} (26--52~GPa) et \textbf{Pnma} (52--100~GPa), avec des pressions de
 transition interpolées à \textbf{25.6~GPa} et \textbf{52.3~GPa}. Le polymorphe \textbf{I-43d}
 reste le moins stable sur toute la gamme mais converge rapidement vers les autres phases à
-haute pression.
+haute pression. Cette version ajoute les diagrammes $V(P)$ et $E(P)$ (avant celui de $H(P)$)
+ainsi que le tableau numérique complet (énergie, volume, enthalpie par formule unitaire, au
+millième d'eV/\AA$^3$) pour les 77 points du scan.
 \end{abstract}
 
 \section{Contexte et objectifs}
@@ -104,6 +117,11 @@ Les sept chaînes ont été soumises via \texttt{submit\_chain.sh} (jobs SLURM
 58452--58458, un par polymorphe, partition \texttt{defq}) et se sont toutes terminées avec
 succès.
 
+L'énergie totale $E$ (\texttt{"free~~energy~~~TOTEN"} dans l'\texttt{OUTCAR}) et le volume de
+maille $V$ (\texttt{"volume~of~cell"}) sont extraits pour chaque point convergé en plus de
+l'enthalpie $H$ ; les trois grandeurs sont rapportées par formule unitaire (division par
+$N_{\text{atomes}}/7$).
+
 \section{Résultats}
 
 \subsection{État de convergence}
@@ -130,6 +148,64 @@ Convergence = critère de forces \texttt{EDIFFG=-0.01}~eV/\AA\ atteint (message 
 required accuracy"} dans l'\texttt{OUTCAR}, terminaison confirmée par le bloc \emph{"General
 timing"}).
 
+\subsection{Diagramme de volume V(P)}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=\textwidth, height=8cm,
+  xlabel={Pression (GPa)},
+  ylabel={$V$/formule (\AA$^3$)},
+  enlarge y limits={upper=0.22, lower=0.02},
+  grid=major,
+]
+\addplot table[x=P_GPa,y=V_A3_per_fu] {../../hp_curves/hp_V_Pnma-VII.dat};
+\addplot table[x=P_GPa,y=V_A3_per_fu] {../../hp_curves/hp_V_Pbam.dat};
+\addplot table[x=P_GPa,y=V_A3_per_fu] {../../hp_curves/hp_V_Pnma.dat};
+\addplot table[x=P_GPa,y=V_A3_per_fu] {../../hp_curves/hp_V_R-3m.dat};
+\addplot table[x=P_GPa,y=V_A3_per_fu] {../../hp_curves/hp_V_Pnma-III.dat};
+\addplot table[x=P_GPa,y=V_A3_per_fu] {../../hp_curves/hp_V_anti-CaFe2O4.dat};
+\addplot table[x=P_GPa,y=V_A3_per_fu] {../../hp_curves/hp_V_I-43d.dat};
+\legend{Pnma-VII, Pbam, Pnma, R-3m, Pnma-III, anti-CaFe2O4, I-43d}
+\end{axis}
+\end{tikzpicture}
+\caption{Volume de la maille par formule unitaire (Al$_4$C$_3$) en fonction de la pression, pour
+les sept polymorphes. Toutes les courbes décroissent de façon monotone et quasi parallèle : la
+compressibilité est similaire d'un polymorphe à l'autre, sans changement de pente marqué au
+voisinage des transitions de stabilité.}
+\label{fig:vp}
+\end{figure}
+
+\subsection{Diagramme d'énergie totale E(P)}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=\textwidth, height=8cm,
+  xlabel={Pression (GPa)},
+  ylabel={$E$/formule (eV)},
+  enlarge y limits={upper=0.22, lower=0.02},
+  grid=major,
+]
+\addplot table[x=P_GPa,y=E_eV_per_fu] {../../hp_curves/hp_E_Pnma-VII.dat};
+\addplot table[x=P_GPa,y=E_eV_per_fu] {../../hp_curves/hp_E_Pbam.dat};
+\addplot table[x=P_GPa,y=E_eV_per_fu] {../../hp_curves/hp_E_Pnma.dat};
+\addplot table[x=P_GPa,y=E_eV_per_fu] {../../hp_curves/hp_E_R-3m.dat};
+\addplot table[x=P_GPa,y=E_eV_per_fu] {../../hp_curves/hp_E_Pnma-III.dat};
+\addplot table[x=P_GPa,y=E_eV_per_fu] {../../hp_curves/hp_E_anti-CaFe2O4.dat};
+\addplot table[x=P_GPa,y=E_eV_per_fu] {../../hp_curves/hp_E_I-43d.dat};
+\legend{Pnma-VII, Pbam, Pnma, R-3m, Pnma-III, anti-CaFe2O4, I-43d}
+\end{axis}
+\end{tikzpicture}
+\caption{Énergie totale (sans le terme $PV$) par formule unitaire (Al$_4$C$_3$) en fonction de
+la pression. Contrairement à $H(P)$, l'ordre des courbes en $E(P)$ reste globalement celui de
+$P=0$ sur toute la gamme : c'est bien le terme $PV$ (piloté par les écarts de volume, cf.
+figure~\ref{fig:vp}) qui provoque les croisements observés sur le diagramme d'enthalpie.}
+\label{fig:ep}
+\end{figure}
+
 \subsection{Diagramme de stabilité H(P)}
 
 \begin{figure}[h]
@@ -139,18 +215,17 @@ timing"}).
   width=\textwidth, height=8cm,
   xlabel={Pression (GPa)},
   ylabel={$H$/formule (eV)},
-  legend pos=outer north east,
-  legend style={font=\small},
+  enlarge y limits={upper=0.22, lower=0.02},
   grid=major,
 ]
 \addplot table[x=P_GPa,y=H_eV_per_fu] {../../hp_curves/hp_Pnma-VII.dat};
-\addplot table[x=P_GPa,y=H_eV_per_fu] {../../hp_curves/hp_R-3m.dat};
 \addplot table[x=P_GPa,y=H_eV_per_fu] {../../hp_curves/hp_Pbam.dat};
-\addplot table[x=P_GPa,y=H_eV_per_fu] {../../hp_curves/hp_Pnma-III.dat};
 \addplot table[x=P_GPa,y=H_eV_per_fu] {../../hp_curves/hp_Pnma.dat};
+\addplot table[x=P_GPa,y=H_eV_per_fu] {../../hp_curves/hp_R-3m.dat};
+\addplot table[x=P_GPa,y=H_eV_per_fu] {../../hp_curves/hp_Pnma-III.dat};
 \addplot table[x=P_GPa,y=H_eV_per_fu] {../../hp_curves/hp_anti-CaFe2O4.dat};
 \addplot table[x=P_GPa,y=H_eV_per_fu] {../../hp_curves/hp_I-43d.dat};
-\legend{Pnma-VII, R-3m, Pbam, Pnma-III, Pnma, anti-CaFe2O4, I-43d}
+\legend{Pnma-VII, Pbam, Pnma, R-3m, Pnma-III, anti-CaFe2O4, I-43d}
 \end{axis}
 \end{tikzpicture}
 \caption{Enthalpie $H = E + PV$ par formule unitaire (Al$_4$C$_3$) en fonction de la pression,
@@ -159,6 +234,14 @@ passe successivement par Pnma-VII, Pbam puis Pnma.}
 \label{fig:hp}
 \end{figure}
 
+\subsection{Valeurs numériques complètes (E, V, H)}
+
+Le tableau~\ref{tab:hp_full} rassemble, pour les 77 points convergés, l'énergie totale $E$, le
+volume $V$ et l'enthalpie $H$ par formule unitaire, arrondis au millième (eV pour $E$ et $H$,
+\AA$^3$ pour $V$).
+
+\input{table_hp_full.tex}
+
 \subsection{Séquence de phases et pressions de transition}
 
 \begin{center}
@@ -166,9 +249,9 @@ passe successivement par Pnma-VII, Pbam puis Pnma.}
 \toprule
 Domaine de pression & Phase la plus stable & Remarque \\
 \midrule
-0--20~GPa   & Pnma-VII & quasi dégénéré avec R-3m ($\Delta H < 0.06$~eV/f.u.) \\
+0--20~GPa   & Pnma-VII & quasi dégénéré avec R-3m ($\Delta H < 0.060$~eV/f.u.) \\
 20--30~GPa  & transition Pnma-VII~$\to$~Pbam & croisement interpolé à \textbf{25.6~GPa} \\
-30--50~GPa  & Pbam & Pnma-III très proche ($\Delta H < 0.05$~eV/f.u. à 50~GPa) \\
+30--50~GPa  & Pbam & Pnma-III très proche ($\Delta H = 0.052$~eV/f.u. à 50~GPa) \\
 50--60~GPa  & transition Pbam~$\to$~Pnma & croisement interpolé à \textbf{52.3~GPa} \\
 60--100~GPa & Pnma & écart croissant avec les autres phases \\
 \bottomrule
@@ -180,8 +263,8 @@ points de grille encadrant le croisement des enveloppes ($20$/$30$~GPa et $50$/$
 respectivement).
 
 I-43d demeure le polymorphe le moins stable sur toute la gamme étudiée
-($\Delta H = +3.12$~eV/f.u. à 0~GPa par rapport à Pnma-VII), mais son écart avec la phase la
-plus stable se réduit fortement sous pression ($\Delta H = +0.13$~eV/f.u. à 100~GPa par rapport
+($\Delta H = +3.122$~eV/f.u. à 0~GPa par rapport à Pnma-VII), mais son écart avec la phase la
+plus stable se réduit fortement sous pression ($\Delta H = +0.132$~eV/f.u. à 100~GPa par rapport
 à Pnma), ce qui en fait le second candidat le plus proche du bas du classement au-delà de
 80~GPa.
 
@@ -193,7 +276,8 @@ Le rapport du 22~août signalait un renversement entre R-3m (dominant à 0~GPa) 
 (dominants à 50~GPa), établi sur seulement deux points de pression. Le scan complet confirme ce
 renversement mais en révèle la structure fine : R-3m n'est en réalité jamais strictement le
 plus stable des sept candidats sur la grille étudiée -- Pnma-VII le devance de peu dès 0~GPa
-($\Delta H = 0.024$~eV/f.u.) et l'écart se creuse progressivement jusqu'à 20~GPa. La
+($\Delta H = 0.024$~eV/f.u.) et l'écart se creuse progressivement jusqu'à 20~GPa
+($\Delta H = 0.060$~eV/f.u.). La
 « domination » de R-3m relevée dans le rapport précédent provenait du jeu de données alors
 partiel à 0~GPa, dans lequel Pnma-VII n'avait pas encore convergé. Le renversement
 Pbam~$\to$~Pnma vers 50~GPa, en revanche, se confirme et se précise : il s'agit en fait de deux
@@ -203,8 +287,9 @@ non d'une transition unique R-3m~$\to$~Pbam/Pnma.
 \subsection{Robustesse du classement}
 
 Les écarts d'enthalpie entre phases concurrentes autour des deux transitions restent modestes
-(quelques dizaines de meV/f.u.), en particulier entre Pbam et Pnma-III sur toute la plage
-30--90~GPa ($\Delta H < 0.1$~eV/f.u.). Le maillage de $\mathbf{k}$-points allégé
+(quelques dizaines à environ une centaine de meV/f.u.), en particulier entre Pbam et Pnma-III
+sur toute la plage 30--90~GPa ($\Delta H < 0.113$~eV/f.u.). Le maillage de
+$\mathbf{k}$-points allégé
 (\texttt{KSPACING=0.2}) utilisé pour ce scan exploratoire, plus grossier que celui de la
 campagne 0/50~GPa (\texttt{KSPACING=0.03}), pourrait introduire une incertitude numérique du
 même ordre de grandeur que ces écarts. Les pressions de transition rapportées ici sont donc à
@@ -236,7 +321,10 @@ Commit de lancement de la campagne : \texttt{97da5a3} (« Converge Pnma/anti-CaF
 \texttt{hp\_curves/Al4C3\_<polymorphe>/P<pression>/}, scripts de soumission et d'extraction dans
 \texttt{hp\_curves/} (\texttt{gen\_hp\_runs.py}, \texttt{submit\_chain.sh},
 \texttt{extract\_hp.py}), résultats agrégés dans \texttt{hp\_curves/results\_hp.csv} et
-\texttt{hp\_curves/hp\_<polymorphe>.dat}. Rapport précédent (campagne 0/50~GPa) :
+\texttt{hp\_curves/hp\_<polymorphe>.dat} (H), \texttt{hp\_curves/hp\_E\_<polymorphe>.dat} (E),
+\texttt{hp\_curves/hp\_V\_<polymorphe>.dat} (V). Tableau complet (section~3.5) généré depuis
+\texttt{results\_hp.csv} dans \texttt{table\_hp\_full.tex} /
+\texttt{table\_hp\_full\_body.tex}. Rapport précédent (campagne 0/50~GPa) :
 \texttt{rapport\_activite\_Al4C3.tex}.
 
 \end{document}
