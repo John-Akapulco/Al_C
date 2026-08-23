@@ -1,0 +1,37 @@
+SYSTEM = Al4C3 anti-CaFe2O4 - r2SCAN H(P) scan @ 40 GPa (ISIF=8)
+
+# electronic
+PREC    = Accurate
+ENCUT   = 600
+EDIFF   = 1E-5
+ISMEAR  = 0
+SIGMA   = 0.05
+
+# meta-GGA: r2SCAN, restarting from the converged PBE WAVECAR/CHGCAR at
+# this same pressure (hp_curves/Al4C3_anti-CaFe2O4/P40/) -- VASP's recommended
+# way to get robust meta-GGA SCF convergence
+METAGGA  = R2scan
+LASPH    = .TRUE.
+ADDGRID  = .TRUE.
+LMIXTAU  = .TRUE.
+ISTART   = 1
+ICHARG   = 1
+
+# k-points (same coarse mesh as the PBE scan, for a like-for-like comparison)
+KSPACING = 0.2
+KGAMMA   = .TRUE.
+
+# ionic + volume relaxation under external pressure, cell shape fixed
+IBRION  = 2
+ISIF    = 8
+NSW     = 200
+EDIFFG  = -0.01
+PSTRESS = 400.0        ! kBar = 40 GPa
+
+# parallelization (per benchmark: KPAR>1 outperforms NPAR>1 on these
+# systems; user-specified KPAR=8, NPAR left at default)
+KPAR    = 8
+
+# output
+LWAVE   = .TRUE.
+LCHARG  = .TRUE.

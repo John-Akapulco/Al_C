@@ -1,0 +1,36 @@
+SYSTEM = Al4C3 Fd-3m - r2SCAN H(P) scan @ 30 GPa (ISIF=8)
+
+# electronic
+PREC    = Accurate
+ENCUT   = 600
+EDIFF   = 1E-5
+ISMEAR  = 0
+SIGMA   = 0.05
+
+# meta-GGA: r2SCAN, restarting from the previous pressure point in this
+# chain (P0 seeded from the converged PBE Fd-3m/P0 WAVECAR/CHGCAR --
+# Fd-3m's PBE scan is not complete at other pressures yet)
+METAGGA  = R2scan
+LASPH    = .TRUE.
+ADDGRID  = .TRUE.
+LMIXTAU  = .TRUE.
+ISTART   = 1
+ICHARG   = 1
+
+# k-points (same coarse mesh as the PBE scan, for a like-for-like comparison)
+KSPACING = 0.2
+KGAMMA   = .TRUE.
+
+# ionic + volume relaxation under external pressure, cell shape fixed
+IBRION  = 2
+ISIF    = 8
+NSW     = 200
+EDIFFG  = -0.01
+PSTRESS = 300.0        ! kBar = 30 GPa
+
+# parallelization
+KPAR    = 8
+
+# output -- WAVECAR/CHGCAR saved so the next pressure point can restart
+LWAVE   = .TRUE.
+LCHARG  = .TRUE.

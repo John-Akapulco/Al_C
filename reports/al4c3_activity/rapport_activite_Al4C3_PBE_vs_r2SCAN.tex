@@ -1,0 +1,202 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{booktabs}
+\usepackage{siunitx}
+\usepackage[table]{xcolor}
+\usepackage{hyperref}
+\usepackage{longtable}
+\usepackage{enumitem}
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+\sisetup{detect-weight=true, detect-family=true}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!50!black,
+  urlcolor=blue!50!black,
+  citecolor=blue!50!black,
+  pdftitle={Rapport d'activite - Campagne PBE vs r2SCAN Al4C3},
+  pdfauthor={Pr. John Akapulco}
+}
+
+\title{\vspace{-1.5cm}Rapport d'activité\\[2pt]
+\large Campagne r2SCAN d'Al$_4$C$_3$ : méthodologie, structures d'entrée et maillage
+$\mathbf{k}$, en vue de la comparaison avec le scan PBE}
+\author{Pr. John Akapulco \\ \small \href{mailto:computchem86@gmail.com}{computchem86@gmail.com}}
+\date{23 août 2026}
+
+\begin{document}
+\maketitle
+\vspace{-0.5cm}
+
+\begin{abstract}
+\noindent
+Ce rapport documente le lancement de la campagne r2SCAN d'Al$_4$C$_3$, destinée à être
+comparée au scan PBE complet (\texttt{rapport\_activite\_Al4C3\_HP\_scan.tex}, 7 polymorphes,
+0--100~GPa). Les paramètres DFT (\texttt{ENCUT}, \texttt{EDIFF}, \texttt{KSPACING}, la grille de
+pression, \texttt{ISIF=8}) sont identiques à ceux du scan PBE ; seule la fonctionnelle change
+(PBE~$\to$~r2SCAN), pour une comparaison à un seul paramètre variable. Chaque point r2SCAN est
+amorcé depuis le \texttt{WAVECAR}/\texttt{CHGCAR} PBE déjà convergé à la même pression (pratique
+recommandée par VASP pour les meta-GGA). Ce document liste, pour chacun des sept polymorphes
+convergés en PBE, la structure d'entrée (\texttt{POSCAR}, identique à 0 et 50~GPa entre PBE et
+r2SCAN) et le maillage de points $\mathbf{k}$ généré par \texttt{KSPACING=0.2} à ces deux
+pressions. Il ne contient \emph{pas encore} les résultats r2SCAN eux-mêmes (H(P), classement de
+stabilité) : les chaînes de calcul viennent d'être soumises (voir section~\ref{sec:status}) et
+ce rapport sera complété d'une comparaison quantitative PBE/r2SCAN une fois les points
+convergés.
+\end{abstract}
+
+\section{Contexte et objectifs}
+
+Le scan PBE (0--100~GPa, sept polymorphes, \texttt{KSPACING=0.2}) a identifié une séquence de
+stabilité Pnma-VII~$\to$~Pbam~$\to$~Pnma avec deux transitions à 26 et 52~GPa (voir rapport
+principal, section « Précision des pressions de transition », pour l'incertitude associée à ces
+valeurs). L'objectif de la présente campagne est de vérifier que cette séquence -- et en
+particulier les deux pressions de transition -- est robuste au choix de fonctionnelle
+d'échange-corrélation : r2SCAN (meta-GGA) corrige une partie des biais systématiques connus de
+PBE (notamment la sur-estimation des volumes d'équilibre), ce qui peut déplacer les croisements
+d'enthalpie entre phases de volumes différents (cf.\ l'analyse de précision du rapport
+principal, où $\delta P_t \propto 1/|\Delta V|$).
+
+\section{Méthodologie}
+
+\subsection{Paramètres DFT et redémarrage depuis PBE}
+
+Les paramètres communs (\texttt{PREC}, \texttt{ENCUT=600~eV}, \texttt{EDIFF=1E-5},
+\texttt{ISMEAR/SIGMA=0/0.05}, \texttt{KSPACING=0.2}, \texttt{IBRION/ISIF=2/8},
+\texttt{NSW=200}, \texttt{EDIFFG=-0.01}, grille de pression 0--100~GPa par pas de 10~GPa,
+\texttt{KPAR=8}) sont repris à l'identique du scan PBE. Les seuls ajouts sont les balises
+meta-GGA :
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+Balise & Rôle \\
+\midrule
+\texttt{METAGGA = R2scan} & fonctionnelle meta-GGA r2SCAN (implémentation native VASP) \\
+\texttt{LASPH = .TRUE.} & corrections PAW asphériques (nécessaires en meta-GGA) \\
+\texttt{ADDGRID = .TRUE.} & grille réelle plus fine pour les termes de gradient de $\tau$ \\
+\texttt{LMIXTAU = .TRUE.} & mélange de la densité d'énergie cinétique dans le SCF \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Pour les sept polymorphes dont le scan PBE est intégralement convergé (0--100~GPa), chaque point
+r2SCAN est amorcé \emph{directement} depuis le \texttt{CONTCAR}/\texttt{WAVECAR}/\texttt{CHGCAR}
+PBE convergé à la même pression (\texttt{ISTART=1}, \texttt{ICHARG=1}) -- c'est la pratique
+recommandée par VASP pour la convergence SCF des meta-GGA, et cela élimine le besoin d'une
+chaîne de redémarrage entre pressions voisines (chaque point est indépendant). Pour le
+polymorphe \textbf{Fd-3m}, dont le scan PBE est encore en cours (voir
+section~\ref{sec:status}), seul le point $P=0$ dispose d'un \texttt{WAVECAR} PBE convergé ; la
+chaîne r2SCAN de ce polymorphe est donc construite comme une chaîne ascendante unique
+0~$\to$~10~$\to \dots \to$~100~GPa, où seul $P=0$ est amorcé depuis PBE et chaque point suivant
+redémarre depuis le point r2SCAN précédent (même mécanisme que la chaîne PBE originale de
+Fd-3m).
+
+\section{Maillage de points $\mathbf{k}$}
+
+Le maillage \texttt{KSPACING=0.2} génère un nombre de points $\mathbf{k}$ différent pour chaque
+polymorphe (la maille et le réseau réciproque diffèrent), et identique entre PBE et r2SCAN à
+pression donnée (seule la fonctionnelle change, pas la géométrie du maillage). Le tableau
+ci-dessous liste le maillage de Monkhorst-Pack généré ($N_1 \times N_2 \times N_3$), le nombre
+total de points $\mathbf{k}$ et le nombre de points irréductibles (après réduction par symétrie)
+à 0 et 50~GPa, extraits des \texttt{OUTCAR} PBE convergés.
+
+\begin{center}
+\begin{tabular}{lcccc}
+\toprule
+Polymorphe & $P$ (GPa) & Maillage $N_1{\times}N_2{\times}N_3$ & $k$-points totaux & $k$-points irréductibles \\
+\midrule
+Pnma-VII           & 0  & $4\times10\times4$ & 160 & 54 \\
+Pnma-VII           & 50 & $4\times11\times4$ & 176 & 54 \\
+\midrule
+Pbam               & 0  & $4\times7\times11$ & 308 & 72 \\
+Pbam               & 50 & $4\times7\times11$ & 308 & 72 \\
+\midrule
+Pnma               & 0  & $4\times11\times4$ & 176 & 54 \\
+Pnma               & 50 & $4\times11\times4$ & 176 & 54 \\
+\midrule
+R-3m               & 0  & $12\times12\times2$ & 288 & 38 \\
+R-3m               & 50 & $12\times12\times2$ & 288 & 38 \\
+\midrule
+Pnma-III           & 0  & $4\times11\times4$ & 176 & 54 \\
+Pnma-III           & 50 & $4\times11\times4$ & 176 & 54 \\
+\midrule
+anti-CaFe$_2$O$_4$ & 0  & $11\times4\times4$ & 176 & 54 \\
+anti-CaFe$_2$O$_4$ & 50 & $12\times4\times4$ & 192 & 63 \\
+\midrule
+I-43d              & 0  & $5\times5\times5$ & 125 & 10 \\
+I-43d              & 50 & $6\times6\times6$ & 216 & 20 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Le nombre de points $\mathbf{k}$ irréductibles varie fortement d'un polymorphe à l'autre (de 10
+pour I-43d à 72 pour Pbam), reflétant à la fois des mailles de tailles différentes (14 à 28
+atomes/maille selon le polymorphe) et des symétries de groupe d'espace différentes. I-43d se
+distingue par un maillage cubique dense (5$^3$ à 6$^3$) mais très peu de points irréductibles
+(groupe d'espace cubique $I\bar43d$, haute symétrie) ; à l'inverse R-3m, malgré 288 points
+totaux, n'en réduit qu'à 38 (symétrie rhomboédrique moins favorable pour ce maillage
+anisotrope).
+
+\section{Structures d'entrée (POSCAR, PBE relaxé $\to$ seed r2SCAN)}
+
+Les structures ci-dessous sont les \texttt{CONTCAR} PBE convergés à 0 et 50~GPa, utilisés tels
+quels comme \texttt{POSCAR} d'entrée des calculs r2SCAN correspondants
+(\texttt{hp\_curves\_r2SCAN/Al4C3\_<polymorphe>/P<pression>/POSCAR}).
+
+\input{poscar_listing_body.tex}
+
+\section{État de la campagne}
+\label{sec:status}
+
+\begin{center}
+\begin{tabular}{p{4.3cm}p{2.4cm}p{4cm}p{3cm}}
+\toprule
+Polymorphe & Points préparés & Amorçage & État \\
+\midrule
+Pnma-VII, Pbam, Pnma, R-3m, Pnma-III, anti-CaFe$_2$O$_4$, I-43d
+  & 11/11 (0--100~GPa) & WAVECAR PBE, même pression & fichiers prêts, non soumis \\
+Fd-3m
+  & 11/11 (0--100~GPa) & WAVECAR PBE à $P=0$ seulement, chaîne ascendante ensuite
+  & \textbf{soumis} (job SLURM 58461) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Les fichiers des sept premiers polymorphes sont générés dans \texttt{hp\_curves\_r2SCAN/}
+(\texttt{gen\_hp\_runs\_r2scan.py}) mais pas encore soumis à SLURM. La chaîne Fd-3m a été
+soumise séparément (\texttt{gen\_hp\_run\_fd3m\_r2scan.py}), le point $P=0$ étant le seul à
+disposer d'un \texttt{WAVECAR} PBE convergé au moment du lancement (le scan PBE de Fd-3m,
+lancé en chaîne ascendante unique lui aussi, est toujours en cours -- job SLURM 58460).
+
+\section{Prochaines étapes}
+
+\begin{enumerate}[label=(\roman*)]
+  \item Soumettre les sept chaînes r2SCAN restantes (\texttt{hp\_curves\_r2SCAN/submit\_chain.sh}),
+  après revue.
+  \item Une fois les points r2SCAN convergés, extraire $E$, $V$, $H$
+  (\texttt{hp\_curves\_r2SCAN/extract\_hp.py}, même format que le scan PBE) et construire les
+  diagrammes $V(P)$, $E(P)$, $H(P)$ r2SCAN, superposés aux courbes PBE du rapport principal.
+  \item Comparer les pressions de transition PBE (26 et 52~GPa) aux valeurs r2SCAN
+  correspondantes, avec la même analyse de précision ($\delta P_t \approx \sqrt2\,\delta H /
+  |\Delta V(P_t)|$) que dans le rapport principal.
+  \item Vérifier en particulier si r2SCAN lève ou confirme la quasi-dégénérescence
+  Pbam~$\leftrightarrow$~Pnma-III observée en PBE au-delà de 70~GPa.
+\end{enumerate}
+
+\appendix
+\section{Références du dépôt}
+
+Scripts de génération : \texttt{hp\_curves/gen\_hp\_runs\_r2scan.py} (sept polymorphes convergés
+en PBE), \texttt{hp\_curves/gen\_hp\_run\_fd3m\_r2scan.py} (Fd-3m, chaîne ascendante). Données
+d'entrée et de sortie dans \texttt{hp\_curves\_r2SCAN/Al4C3\_<polymorphe>/P<pression>/}, script
+d'extraction \texttt{hp\_curves\_r2SCAN/extract\_hp.py}. Scan PBE de référence :
+\texttt{rapport\_activite\_Al4C3\_HP\_scan.tex} (commit \texttt{effe450}).
+
+\end{document}
