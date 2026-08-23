@@ -52,17 +52,20 @@ tous deux intégralement convergés (11/11 points chacun) ; la
 section~\ref{sec:fd3m-comparison} en tire une première comparaison quantitative PBE/r2SCAN
 (volume d'équilibre et courbe $V(P)$). Les sept autres polymorphes sont en cours de traitement
 r2SCAN (42/88 points au total convergés à ce stade, voir section~\ref{sec:status}) ; la
-comparaison des pressions de transition (26 et 52~GPa en PBE) sera ajoutée une fois leurs
-chaînes achevées.
+comparaison des pressions de transition PBE (\textbf{5, 32 et 52~GPa} -- séquence à quatre
+domaines Pnma-VII~$\to$~Fd-3m~$\to$~Pbam~$\to$~Pnma, révisée le 23~août au soir suite à la
+convergence de Fd-3m, voir rapport principal) sera ajoutée une fois les chaînes des sept autres
+polymorphes achevées.
 \end{abstract}
 
 \section{Contexte et objectifs}
 
-Le scan PBE (0--100~GPa, sept polymorphes, \texttt{KSPACING=0.2}) a identifié une séquence de
-stabilité Pnma-VII~$\to$~Pbam~$\to$~Pnma avec deux transitions à 26 et 52~GPa (voir rapport
-principal, section « Précision des pressions de transition », pour l'incertitude associée à ces
-valeurs). L'objectif de la présente campagne est de vérifier que cette séquence -- et en
-particulier les deux pressions de transition -- est robuste au choix de fonctionnelle
+Le scan PBE (0--100~GPa, huit polymorphes en comptant Fd-3m, \texttt{KSPACING=0.2}) a identifié
+une séquence de stabilité à quatre domaines, Pnma-VII~$\to$~Fd-3m~$\to$~Pbam~$\to$~Pnma, avec
+des transitions à 5, 32 et 52~GPa (voir rapport principal, section « Précision des pressions de
+transition », pour l'incertitude associée à ces valeurs). L'objectif de la présente campagne est
+de vérifier que cette séquence -- et en particulier ces trois pressions de transition -- est
+robuste au choix de fonctionnelle
 d'échange-corrélation : r2SCAN (meta-GGA) corrige une partie des biais systématiques connus de
 PBE (notamment la sur-estimation des volumes d'équilibre), ce qui peut déplacer les croisements
 d'enthalpie entre phases de volumes différents (cf.\ l'analyse de précision du rapport
@@ -240,9 +243,11 @@ structure. Un redémarrage depuis P30 avec un réglage \texttt{ALGO} plus conser
   points restants.
   \item Une fois tous les polymorphes convergés, construire les diagrammes $V(P)$, $E(P)$,
   $H(P)$ r2SCAN complets, superposés aux courbes PBE du rapport principal.
-  \item Comparer les pressions de transition PBE (26 et 52~GPa) aux valeurs r2SCAN
+  \item Comparer les pressions de transition PBE (5, 32 et 52~GPa) aux valeurs r2SCAN
   correspondantes, avec la même analyse de précision ($\delta P_t \approx \sqrt2\,\delta H /
-  |\Delta V(P_t)|$) que dans le rapport principal.
+  |\Delta V(P_t)|$) que dans le rapport principal -- en particulier vérifier si r2SCAN confirme
+  la fenêtre de stabilité de Fd-3m entre Pnma-VII et Pbam (5--32~GPa en PBE), la transition la
+  moins bien déterminée des trois.
   \item Vérifier en particulier si r2SCAN lève ou confirme la quasi-dégénérescence
   Pbam~$\leftrightarrow$~Pnma-III observée en PBE au-delà de 70~GPa.
 \end{enumerate}
