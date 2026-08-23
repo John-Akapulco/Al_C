@@ -38,18 +38,25 @@
 \begin{abstract}
 \noindent
 Cette note complète le rapport \texttt{rapport\_activite\_Al4C3\_HP\_scan.tex} (scan H(P)
-complet, 0--100~GPa, sept polymorphes) en présentant les mêmes résultats sous forme
+complet, 0--100~GPa, huit polymorphes) en présentant les mêmes résultats sous forme
 d'enthalpie \emph{relative} : $\Delta H(P) = H_{\text{phase}}(P) - H_{\text{R-3m}}(P)$, exprimée
 en meV/atome, où \textbf{R-3m} est prise comme référence et reste fixée à $\Delta H = 0$ sur
 toute la gamme de pression. Cette normalisation rend les écarts de stabilité directement
 lisibles en meV/atome. Avec R-3m comme référence, \textbf{Pnma-VII} reste en dessous de zéro
 sur \emph{toute} la gamme étudiée (de $-3.441$~meV/atome à 0~GPa à $-28.689$~meV/atome à
-100~GPa) : R-3m n'est jamais la phase la plus stable des sept candidats, mais elle n'en est
-séparée que de quelques meV/atome à basse pression. Les autres phases (Pbam, Pnma-III, Pnma,
+100~GPa) : R-3m n'est jamais la phase la plus stable des huit candidats, mais elle n'en est
+séparée que de quelques meV/atome à basse pression, où \textbf{Fd-3m} est également très proche
+($+5.235$~meV/atome à 0~GPa). Les cinq autres phases (Pbam, Pnma-III, Pnma,
 anti-CaFe$_2$O$_4$, I-43d) démarrent nettement au-dessus de zéro à 0~GPa et croisent la
-référence successivement entre $\approx$23 et $\approx$45~GPa à mesure que la pression
+référence successivement entre $\approx$3 et $\approx$45~GPa à mesure que la pression
 augmente.
 \end{abstract}
+
+\medskip
+\noindent\textbf{Mise à jour du 23~août 2026 (soir) :} le huitième polymorphe, \textbf{Fd-3m},
+absent de la version précédente de cette note (scan encore en cours), a depuis convergé sur
+l'intégralité de la grille 0--100~GPa. Sa courbe $\Delta H(P)$ est ajoutée au diagramme, au
+tableau de classement et à la liste des croisements avec R-3m ci-dessous.
 
 \section{Construction du diagramme}
 
@@ -60,7 +67,7 @@ on calcule
 \Delta H_i(P)\ \text{en meV/atome} = \frac{\Delta H_i(P)\ [\text{eV/f.u.}]}{7}\times 1000,
 \]
 avec 7 atomes par formule unitaire (Al$_4$C$_3$ = 4~Al + 3~C). R-3m est retenue ici comme phase
-de référence ; ce n'est pas la phase de plus basse enthalpie à 0~GPa dans les sept candidats
+de référence ; ce n'est pas la phase de plus basse enthalpie à 0~GPa dans les huit candidats
 (voir tableau~\ref{tab:rank0}) -- Pnma-VII la devance de 0.024~eV/f.u.
 ($\approx$3.441~meV/atome), un écart proche de l'incertitude numérique du maillage
 $\mathbf{k}$-points allégé utilisé pour ce scan (cf.\ rapport principal, section
@@ -77,16 +84,17 @@ Rang & Polymorphe & {$H$/f.u. à 0~GPa (eV)} \\
 \midrule
 1 & Pnma-VII           & -43.354 \\
 2 & R-3m (référence)   & -43.329 \\
-3 & Pnma-III           & -42.360 \\
-4 & Pbam               & -42.226 \\
-5 & Pnma               & -41.596 \\
-6 & anti-CaFe$_2$O$_4$ & -41.502 \\
-7 & I-43d              & -40.232 \\
+3 & Fd-3m              & -43.293 \\
+4 & Pnma-III           & -42.360 \\
+5 & Pbam               & -42.226 \\
+6 & Pnma               & -41.596 \\
+7 & anti-CaFe$_2$O$_4$ & -41.502 \\
+8 & I-43d              & -40.232 \\
 \bottomrule
 \end{tabular}
-\caption{Classement à 0~GPa (jeu complet, 7/7 convergés), valeurs au millième d'eV. R-3m, prise
+\caption{Classement à 0~GPa (jeu complet, 8/8 convergés), valeurs au millième d'eV. R-3m, prise
 comme référence pour le diagramme relatif, est la deuxième phase la plus stable à 0~GPa, à
-0.024~eV/f.u.\ de Pnma-VII.}
+0.024~eV/f.u.\ de Pnma-VII et 0.037~eV/f.u.\ devant Fd-3m.}
 \label{tab:rank0}
 \end{table}
 
@@ -114,19 +122,21 @@ comme référence pour le diagramme relatif, est la deuxième phase la plus stab
 ]
 \addplot table[x=P_GPa,y=dH_meV_per_atom] {../../hp_curves/hp_rel_R-3m.dat};
 \addplot table[x=P_GPa,y=dH_meV_per_atom] {../../hp_curves/hp_rel_Pnma-VII.dat};
+\addplot table[x=P_GPa,y=dH_meV_per_atom] {../../hp_curves/hp_rel_Fd-3m.dat};
 \addplot table[x=P_GPa,y=dH_meV_per_atom] {../../hp_curves/hp_rel_Pbam.dat};
 \addplot table[x=P_GPa,y=dH_meV_per_atom] {../../hp_curves/hp_rel_Pnma-III.dat};
 \addplot table[x=P_GPa,y=dH_meV_per_atom] {../../hp_curves/hp_rel_Pnma.dat};
 \addplot table[x=P_GPa,y=dH_meV_per_atom] {../../hp_curves/hp_rel_anti-CaFe2O4.dat};
 \addplot table[x=P_GPa,y=dH_meV_per_atom] {../../hp_curves/hp_rel_I-43d.dat};
-\legend{R-3m (réf.), Pnma-VII, Pbam, Pnma-III, Pnma, anti-CaFe2O4, I-43d}
+\legend{R-3m (réf.), Pnma-VII, Fd-3m, Pbam, Pnma-III, Pnma, anti-CaFe2O4, I-43d}
 \end{axis}
 \end{tikzpicture}
 \caption{Enthalpie relative $\Delta H(P) = H_{\text{phase}}(P) - H_{\text{R-3m}}(P)$, en
 meV/atome. La phase de référence est la droite $\Delta H = 0$ ; toute courbe qui passe sous zéro
-devient, à cette pression, plus stable que R-3m. Pnma-VII reste sous zéro sur toute la gamme.
-Les cinq autres phases démarrent au-dessus de zéro à 0~GPa et croisent la référence entre
-$\approx$23 et $\approx$45~GPa (voir section~\ref{sec:lecture}).}
+devient, à cette pression, plus stable que R-3m. Pnma-VII reste sous zéro sur toute la gamme. Les
+six autres phases démarrent au-dessus de zéro à 0~GPa et croisent la référence entre
+$\approx$3~GPa (Fd-3m, quasi dégénéré avec Pnma-VII et R-3m à basse pression) et
+$\approx$45~GPa (I-43d) (voir section~\ref{sec:lecture}).}
 \label{fig:hprel}
 \end{figure}
 
@@ -136,10 +146,12 @@ $\approx$23 et $\approx$45~GPa (voir section~\ref{sec:lecture}).}
 \begin{itemize}
   \item \textbf{Pnma-VII} est la seule courbe à rester négative sur toute la gamme : de
   $-3.441$~meV/atome à 0~GPa à $-28.689$~meV/atome à 100~GPa. R-3m n'est donc jamais la phase la
-  plus stable des sept, mais l'écart à 0~GPa (3.4~meV/atome) est faible.
-  \item \textbf{0~GPa} : hors Pnma-VII, toutes les autres phases sont nettement au-dessus de
-  zéro -- Pnma-III (+138.504), Pbam (+157.682), Pnma (+247.622), anti-CaFe$_2$O$_4$ (+261.015)
-  et I-43d (+442.527)~meV/atome.
+  plus stable des huit, mais l'écart à 0~GPa (3.4~meV/atome) est faible -- \textbf{Fd-3m} est
+  quasi aussi proche ($+5.235$~meV/atome à 0~GPa) et passe à son tour sous zéro dès
+  $\approx$3~GPa, restant négative jusqu'à 100~GPa ($-134.661$~meV/atome).
+  \item \textbf{0~GPa} : hors Pnma-VII et Fd-3m (quasi dégénérées avec R-3m, cf.\ ci-dessus), les
+  six autres phases sont nettement au-dessus de zéro -- Pnma-III (+138.504), Pbam (+157.682),
+  Pnma (+247.622), anti-CaFe$_2$O$_4$ (+261.015) et I-43d (+442.527)~meV/atome.
   \item \textbf{Croisements avec la référence} (interpolation linéaire entre les deux points de
   grille encadrant le changement de signe, arrondis à l'unité de GPa -- voir rapport principal,
   section « Précision des pressions de transition », pour la justification de cet arrondi) :
@@ -148,6 +160,7 @@ $\approx$23 et $\approx$45~GPa (voir section~\ref{sec:lecture}).}
   \toprule
   Polymorphe & Pression de croisement (vs R-3m) \\
   \midrule
+  Fd-3m              & 3~GPa \\
   Pnma-III           & 23~GPa \\
   Pbam               & 24~GPa \\
   Pnma               & 30~GPa \\
@@ -156,9 +169,11 @@ $\approx$23 et $\approx$45~GPa (voir section~\ref{sec:lecture}).}
   \bottomrule
   \end{tabular}
   \end{center}
-  Pbam et Pnma-III dépassent R-3m en stabilité quasi simultanément, un peu avant la transition
-  Pnma-VII~$\to$~Pbam (26~GPa) identifiée dans le rapport principal sur l'enveloppe de
-  stabilité absolue.
+  Fd-3m dépasse R-3m en stabilité dès 3~GPa, juste avant de devenir elle-même la phase la plus
+  stable de l'enveloppe absolue à 5~GPa (transition Pnma-VII~$\to$~Fd-3m, rapport principal).
+  Pbam et Pnma-III la rejoignent sous zéro quasi simultanément, entre 23 et 24~GPa, alors que
+  Fd-3m domine encore l'enveloppe absolue (stable jusqu'à 32~GPa) : franchir R-3m ne signifie
+  donc pas franchir la phase la plus stable à cette pression.
   \item \textbf{I-43d} reste la courbe la plus haute jusqu'à $\approx$45~GPa (elle passe sous
   zéro entre 40 et 50~GPa), avec l'écart à la référence le plus marqué à 0~GPa
   (+442.527~meV/atome), signe d'une convergence progressive des enthalpies sous forte
@@ -168,11 +183,11 @@ $\approx$23 et $\approx$45~GPa (voir section~\ref{sec:lecture}).}
 \appendix
 \section{Références}
 
-Données sources : \texttt{hp\_curves/results\_hp.csv} (commit \texttt{470e557}, campagne HP
-scan 0--100~GPa). Fichiers de données relatifs générés pour cette note :
+Données sources : \texttt{hp\_curves/results\_hp.csv} (commit \texttt{a595741}, campagne HP
+scan 0--100~GPa, Fd-3m inclus). Fichiers de données relatifs générés pour cette note :
 \texttt{hp\_curves/hp\_rel\_<polymorphe>.dat} (colonnes \texttt{P\_GPa},
-\texttt{dH\_meV\_per\_atom}, référence R-3m). Voir \texttt{rapport\_activite\_Al4C3\_HP\_scan.tex}
-pour la méthodologie DFT complète, les diagrammes $V(P)$/$E(P)$/$H(P)$ en valeurs absolues et le
-tableau numérique complet (E, V, H).
+\texttt{dH\_meV\_per\_atom}, référence R-3m), régénérés pour couvrir les huit polymorphes. Voir
+\texttt{rapport\_activite\_Al4C3\_HP\_scan.tex} pour la méthodologie DFT complète, les
+diagrammes $V(P)$/$E(P)$/$H(P)$ en valeurs absolues et le tableau numérique complet (E, V, H).
 
 \end{document}
