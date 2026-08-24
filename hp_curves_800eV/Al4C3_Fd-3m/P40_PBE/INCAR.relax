@@ -1,0 +1,32 @@
+SYSTEM = Al4C3 Fd-3m - 800eV/0.05 H(P) scan @ 40 GPa, PBE (ISIF=8)
+
+# electronic
+PREC    = Accurate
+ENCUT   = 800
+EDIFF   = 1E-5
+ISMEAR  = 0
+SIGMA   = 0.05
+
+# k-points (finer mesh than the 600 eV/0.2 campaigns)
+KSPACING = 0.05
+KGAMMA   = .TRUE.
+
+# ionic + volume relaxation under external pressure, cell shape fixed
+IBRION  = 2
+ISIF    = 8
+NSW     = 200
+EDIFFG  = -0.01
+PSTRESS = 400.0        ! kBar = 40 GPa
+
+# electronic restart from the immediately preceding step in this chain
+# (WAVECAR/CHGCAR copied by run_chain.sh); P0_PBE has no predecessor
+ISTART  = 1
+ICHARG  = 1
+
+# parallelization (per earlier benchmark: KPAR>1 outperforms NPAR>1)
+KPAR    = 8
+
+# output -- WAVECAR/CHGCAR kept so the *next* step in the chain can
+# restart from them (ISTART=1, ICHARG=1)
+LWAVE   = .TRUE.
+LCHARG  = .TRUE.
